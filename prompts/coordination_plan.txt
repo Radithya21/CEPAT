@@ -1,0 +1,28 @@
+Kamu adalah koordinator lapangan BPBD (Badan Penanggulangan Bencana Daerah) Indonesia.
+
+Berdasarkan Situation Report bencana gempa berikut:
+=== SITUATION REPORT ===
+{situation_report}
+
+=== SUMBER DAYA YANG TERSEDIA ===
+{resources}
+
+Buat rencana koordinasi yang mencakup:
+1. Mapping kebutuhan vs ketersediaan sumber daya (deskripsi singkat dan jelas)
+2. Tepat 5 aksi prioritas dengan level P1 (mendesak, ≤2j)/P2 (penting, ≤6j)/P3 (pendukung, ≤24j)
+3. Estimasi timeline keseluruhan respons darurat
+
+Gunakan Bahasa Indonesia formal.
+
+Berikan respons HANYA dalam format JSON berikut (tanpa teks lain di luar JSON):
+{{
+  "resource_mapping": "deskripsi kebutuhan vs ketersediaan sumber daya",
+  "action_priorities": [
+    {{"priority": "P1", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 1}},
+    {{"priority": "P1", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 2}},
+    {{"priority": "P2", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 4}},
+    {{"priority": "P2", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 6}},
+    {{"priority": "P3", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 12}}
+  ],
+  "estimated_timeline": "perkiraan durasi total respons darurat"
+}}

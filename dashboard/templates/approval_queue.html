@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CEPAT — Approval Queue</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #f1f5f9;
+      --surface:   #ffffff;
+      --nav-bg:    #0f172a;
+      --nav-border:#1e293b;
+      --border:    #e2e8f0;
+      --text:      #0f172a;
+      --text-2:    #475569;
+      --muted:     #94a3b8;
+      --blue:      #2563eb;
+      --blue-bg:   #eff6ff;
+      --blue-mid:  #bfdbfe;
+      --green:     #059669;
+      --green-bg:  #f0fdf4;
+      --amber:     #d97706;
+      --amber-bg:  #fffbeb;
+      --red:       #dc2626;
+      --red-bg:    #fef2f2;
+      --violet:    #7c3aed;
+      --violet-bg: #f5f3ff;
+      --shadow:    0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+      --radius:    12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+    }
+    *,*::before,*::after{box-sizing:border-box;}
+    body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased;}
+
+    /* ── Navbar ── */
+    .cepat-nav{background:var(--nav-bg);border-bottom:1px solid var(--nav-border);height:56px;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+    .nav-logo-wrap{width:52px;height:52px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+    .nav-logo-wrap img{width:100%;height:100%;object-fit:cover;transform:scale(1.08);}
+    .nav-title{font-size:.9rem;font-weight:700;color:#f8fafc;}
+    .nav-sub{font-size:.68rem;color:#64748b;}
+    .nav-right{display:flex;align-items:center;gap:6px;}
+    .nav-link-item{color:#94a3b8;text-decoration:none;font-size:.78rem;font-weight:500;display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:var(--radius-xs);transition:all .15s;}
+    .nav-link-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+    .nav-link-item.active{background:rgba(255,255,255,.12);color:#fff;}
+    #navBadge{background:var(--red);color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center;display:none;}
+
+    /* ── Layout ── */
+    .page-body{max-width:1300px;margin:0 auto;padding:1.5rem 1.25rem 2.5rem;display:flex;flex-direction:column;gap:1.25rem;}
+    .card-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+    .sec-hdr{display:flex;align-items:center;gap:7px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);}
+
+    /* ── Stats Row ── */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+    @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+    .stat-card{padding:1rem 1.25rem;}
+    .stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem;}
+    .stat-icon{width:32px;height:32px;border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;}
+    .stat-value{font-size:1.6rem;font-weight:800;line-height:1;letter-spacing:-.02em;}
+    .stat-label{font-size:.7rem;font-weight:600;color:var(--text-2);margin-top:.2rem;}
+
+    /* ── Toolbar ── */
+    .queue-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;}
+
+    /* ── Tab Nav ── */
+    .tab-nav{display:flex;gap:3px;padding:4px;background:#f1f5f9;border-radius:10px;width:fit-content;}
+    .tab-btn{padding:6px 14px;border:none;border-radius:7px;background:transparent;color:var(--muted);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;font-family:inherit;}
+    .tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+    .tab-count{background:#e2e8f0;color:var(--muted);font-size:.63rem;font-weight:700;padding:1px 6px;border-radius:8px;}
+    .tab-btn.active .tab-count{background:var(--blue-bg);color:var(--blue);}
+
+    /* ── Toggle + Refresh ── */
+    .toolbar-right{display:flex;align-items:center;gap:.75rem;}
+    .toggle-label{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--text-2);cursor:pointer;}
+    .toggle-label input{width:14px;height:14px;cursor:pointer;}
+    .btn-refresh-sm{padding:5px 12px;border-radius:var(--radius-xs);font-size:.73rem;font-weight:600;cursor:pointer;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-mid);display:inline-flex;align-items:center;gap:5px;font-family:inherit;transition:background .1s;}
+    .btn-refresh-sm:hover{background:#dbeafe;}
+
+    /* ── Card Grid ── */
+    .items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1rem;}
+    @media(max-width:640px){.items-grid{grid-template-columns:1fr;}}
+
+    /* ── Item Card ── */
+    .item-card{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);overflow:hidden;transition:box-shadow .15s;}
+    .item-card:hover{box-shadow:var(--shadow-md);}
+    .item-card.card-approved{border-color:#86efac;background:#f0fdf4;}
+    .item-card.card-rejected{border-color:#fca5a5;background:#fef2f2;}
+
+    .item-header{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+    .item-header-left{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+
+    /* Draft type badges */
+    .type-badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;}
+    .type-public-id{background:var(--blue-bg);color:var(--blue);}
+    .type-public-minang{background:var(--amber-bg);color:var(--amber);}
+    .type-technical{background:var(--violet-bg);color:var(--violet);}
+    .type-plan{background:var(--green-bg);color:var(--green);}
+
+    /* Status badges */
+    .status-badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+    .status-draft{background:#f1f5f9;color:#64748b;}
+    .status-approved{background:var(--green-bg);color:#065f46;}
+    .status-rejected{background:var(--red-bg);color:#991b1b;}
+
+    /* Mag chip */
+    .mag-chip{display:inline-flex;align-items:center;justify-content:center;min-width:46px;padding:2px 7px;border-radius:var(--radius-xs);font-weight:700;font-size:.77rem;}
+    .mag-critical{background:#fee2e2;color:#991b1b;}
+    .mag-warning{background:#fef3c7;color:#92400e;}
+    .mag-low{background:#dbeafe;color:#1e40af;}
+
+    /* Item body */
+    .item-body{padding:.875rem 1rem;}
+    .item-meta{font-size:.68rem;color:var(--muted);display:flex;gap:.625rem;flex-wrap:wrap;align-items:center;margin-bottom:.625rem;}
+    .content-box{font-size:.83rem;line-height:1.65;color:var(--text);background:#f8fafc;border-radius:var(--radius-xs);padding:.625rem .875rem;border:1px solid var(--border);min-height:52px;white-space:pre-wrap;word-break:break-word;}
+    .content-edit{width:100%;font-size:.83rem;line-height:1.65;color:var(--text);background:var(--surface);border-radius:var(--radius-xs);padding:.625rem .875rem;border:1.5px solid var(--blue);resize:vertical;min-height:70px;font-family:inherit;}
+    .content-edit:focus{outline:none;border-color:#1d4ed8;}
+    .edit-actions{display:none;gap:6px;flex-wrap:wrap;margin-top:.5rem;}
+    .item-time{font-size:.67rem;color:var(--muted);margin-top:.5rem;}
+
+    /* Item footer */
+    .item-footer{padding:.625rem 1rem;border-top:1px solid var(--border);display:flex;gap:.375rem;align-items:center;flex-wrap:wrap;}
+    .action-done{font-size:.78rem;color:var(--muted);font-style:italic;width:100%;text-align:center;padding:.2rem 0;}
+
+    /* Action buttons */
+    .btn-approve{flex:1;background:var(--green);color:#fff;border:none;border-radius:var(--radius-xs);padding:6px 10px;font-size:.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-family:inherit;transition:opacity .12s;}
+    .btn-approve:hover{opacity:.85;}
+    .btn-edit{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-mid);border-radius:var(--radius-xs);padding:6px 10px;font-size:.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+    .btn-reject{background:var(--red-bg);color:var(--red);border:1px solid #fecaca;border-radius:var(--radius-xs);padding:6px 10px;font-size:.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+    .btn-save{background:var(--blue);color:#fff;border:none;border-radius:var(--radius-xs);padding:6px 12px;font-size:.73rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;}
+    .btn-cancel-edit{background:#f1f5f9;color:var(--text-2);border:none;border-radius:var(--radius-xs);padding:6px 12px;font-size:.73rem;font-weight:600;cursor:pointer;font-family:inherit;}
+
+    /* ── Plan Card extras ── */
+    .resource-box{font-size:.78rem;line-height:1.6;color:var(--text-2);background:#f8fafc;border-radius:var(--radius-xs);padding:.625rem .875rem;border:1px solid var(--border);margin-bottom:.75rem;}
+    .actions-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.375rem;}
+    .action-table{width:100%;border-collapse:collapse;}
+    .action-table th{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--border);text-align:left;}
+    .action-table td{font-size:.77rem;padding:5px 8px;border-bottom:1px solid #f8fafc;vertical-align:top;}
+    .action-table tr:last-child td{border-bottom:none;}
+    .p1-chip{background:var(--red-bg);color:#991b1b;font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:4px;}
+    .p2-chip{background:var(--amber-bg);color:#92400e;font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:4px;}
+    .p3-chip{background:var(--blue-bg);color:#1e40af;font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:4px;}
+    .gen-tag{font-size:.67rem;color:var(--muted);}
+    .gen-tag.llm{color:var(--violet);}
+    .timeline-note{font-size:.75rem;color:var(--text-2);margin-top:.625rem;display:flex;align-items:center;gap:5px;}
+
+    /* ── Audit Log ── */
+    .audit-wrap{padding:1.125rem;}
+    .audit-scroll{overflow-x:auto;margin-top:.875rem;}
+    .audit-table{width:100%;border-collapse:collapse;min-width:700px;}
+    .audit-table th{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 .875rem .625rem;border-bottom:2px solid var(--border);white-space:nowrap;text-align:left;}
+    .audit-table td{padding:.65rem .875rem;font-size:.82rem;border-bottom:1px solid #f8fafc;vertical-align:middle;}
+    .audit-table tr:hover td{background:#fafcff;}
+    .audit-table tr:last-child td{border-bottom:none;}
+    .decision-approved{color:var(--green);font-weight:600;}
+    .decision-rejected{color:var(--red);font-weight:600;}
+    .decision-edited{color:var(--blue);font-weight:600;}
+
+    /* ── Empty State ── */
+    .empty-state{text-align:center;padding:3rem 1rem;color:var(--muted);}
+    .empty-state i{font-size:1.6rem;display:block;margin-bottom:.5rem;}
+    .empty-state p{font-size:.78rem;margin:0;}
+
+    /* ── Toast ── */
+    .toast-zone{position:fixed;bottom:1.5rem;right:1.5rem;z-index:3000;display:flex;flex-direction:column;gap:8px;}
+    .cepat-toast{background:#1e293b;color:#f8fafc;border-radius:var(--radius-sm);padding:11px 16px;font-size:.82rem;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;min-width:250px;animation:toastIn .25s ease;transition:opacity .3s;}
+    @keyframes toastIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    .toast-success .ti{color:#34d399;}
+    .toast-error .ti{color:#f87171;}
+    .toast-info .ti{color:#60a5fa;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spin{animation:spin .7s linear infinite;display:inline-block;}
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="cepat-nav">
+  <a class="nav-brand" href="/">
+    <div class="nav-logo-wrap">
+      <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo CEPAT" />
+    </div>
+    <div>
+      <div class="nav-title">CEPAT</div>
+      <div class="nav-sub">Emergency Monitoring System</div>
+    </div>
+  </a>
+  <div class="nav-right">
+    <a href="/" class="nav-link-item"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="/approval" class="nav-link-item active">
+      <i class="fas fa-clipboard-check"></i> Approval Queue
+      <span id="navBadge">0</span>
+    </a>
+  </div>
+</nav>
+
+<main class="page-body">
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="card-panel stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:var(--amber-bg);color:var(--amber);"><i class="fas fa-clock"></i></div>
+      </div>
+      <div class="stat-value" id="sPending" style="color:var(--amber);">—</div>
+      <div class="stat-label">Total Menunggu Approval</div>
+    </div>
+    <div class="card-panel stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:var(--blue-bg);color:var(--blue);"><i class="fas fa-comment-alt"></i></div>
+      </div>
+      <div class="stat-value" id="sPendingDrafts" style="color:var(--blue);">—</div>
+      <div class="stat-label">Draf Pesan Pending</div>
+    </div>
+    <div class="card-panel stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:var(--violet-bg);color:var(--violet);"><i class="fas fa-tasks"></i></div>
+      </div>
+      <div class="stat-value" id="sPendingPlans" style="color:var(--violet);">—</div>
+      <div class="stat-label">Rencana Koordinasi Pending</div>
+    </div>
+    <div class="card-panel stat-card">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:var(--green-bg);color:var(--green);"><i class="fas fa-check-double"></i></div>
+      </div>
+      <div class="stat-value" id="sApprovedToday" style="color:var(--green);">—</div>
+      <div class="stat-label">Disetujui Hari Ini</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="queue-toolbar">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('drafts')" id="tabDrafts">
+        <i class="fas fa-comment-alt"></i> Draf Pesan
+        <span class="tab-count" id="countDrafts">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('plans')" id="tabPlans">
+        <i class="fas fa-tasks"></i> Rencana Koordinasi
+        <span class="tab-count" id="countPlans">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('audit')" id="tabAudit">
+        <i class="fas fa-history"></i> Audit Log
+      </button>
+    </div>
+    <div class="toolbar-right">
+      <label class="toggle-label">
+        <input type="checkbox" id="showAllToggle" onchange="loadAll()" />
+        Tampilkan semua (termasuk approved/rejected)
+      </label>
+      <button class="btn-refresh-sm" onclick="loadAll()"><i class="fas fa-sync-alt"></i> Refresh</button>
+    </div>
+  </div>
+
+  <!-- Panel: Draf -->
+  <div id="panelDrafts">
+    <div class="items-grid" id="draftsGrid">
+      <div style="padding:2rem;color:var(--muted);"><i class="fas fa-spinner spin"></i> Memuat…</div>
+    </div>
+  </div>
+
+  <!-- Panel: Plans -->
+  <div id="panelPlans" style="display:none;">
+    <div class="items-grid" id="plansGrid">
+      <div style="padding:2rem;color:var(--muted);"><i class="fas fa-spinner spin"></i> Memuat…</div>
+    </div>
+  </div>
+
+  <!-- Panel: Audit -->
+  <div id="panelAudit" style="display:none;">
+    <div class="card-panel audit-wrap">
+      <div class="sec-hdr"><i class="fas fa-history"></i> Riwayat Keputusan Petugas</div>
+      <div class="audit-scroll">
+        <table class="audit-table">
+          <thead>
+            <tr><th>Waktu</th><th>Aksi</th><th>Kategori</th><th>ID</th><th>Keputusan</th><th>Petugas</th><th>Catatan</th></tr>
+          </thead>
+          <tbody id="auditBody">
+            <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);">Memuat…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast-zone" id="toastZone"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+"use strict";
+let currentTab = "drafts";
+const OFFICER = "Petugas BPBD";
+
+function showToast(msg, type = "info") {
+    const zone = document.getElementById("toastZone");
+    const div = document.createElement("div");
+    div.className = `cepat-toast toast-${type}`;
+    const icons = {success:"check-circle",error:"times-circle",info:"info-circle"};
+    div.innerHTML = `<i class="fas fa-${icons[type]||"info-circle"} ti" style="font-size:1rem;flex-shrink:0;"></i><div>${msg}</div>`;
+    zone.appendChild(div);
+    setTimeout(() => { div.style.opacity = "0"; setTimeout(() => div.remove(), 400); }, 4000);
+}
+
+function fmtTime(ts) {
+    if (!ts) return "—";
+    try {
+        const d = new Date(ts);
+        if (isNaN(d)) return ts;
+        return d.toLocaleString("id-ID", {day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"Asia/Jakarta"});
+    } catch { return ts; }
+}
+
+function magChip(m) {
+    const cls = m >= 6 ? "mag-critical" : m >= 5 ? "mag-warning" : "mag-low";
+    return `<span class="mag-chip ${cls}">M ${m}</span>`;
+}
+function statusBadge(s) {
+    const map = {APPROVED:["status-approved","✓ Disetujui"],REJECTED:["status-rejected","✗ Ditolak"],DRAFT:["status-draft","Menunggu"]};
+    const [cls, label] = map[s] || ["status-draft", s];
+    return `<span class="status-badge ${cls}">${label}</span>`;
+}
+function draftTypeLabel(t) {
+    const map = {public_id:["PUBLIC ID","type-public-id"],public_minang:["MINANG","type-public-minang"],technical:["TEKNIS","type-technical"]};
+    const [label,cls] = map[t] || [t,"type-technical"];
+    return `<span class="type-badge ${cls}">${label}</span>`;
+}
+function prioChip(p) {
+    return `<span class="${p==="P1"?"p1-chip":p==="P2"?"p2-chip":"p3-chip"}">${p}</span>`;
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    ["drafts","plans","audit"].forEach(t => {
+        const panel = document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`);
+        const btn   = document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`);
+        panel.style.display = t === tab ? "" : "none";
+        btn.classList.toggle("active", t === tab);
+    });
+    if (tab === "audit") loadAudit();
+}
+
+async function loadStats() {
+    try {
+        const r = await fetch("/api/approval/stats");
+        const j = await r.json();
+        if (j.status === "success") {
+            const d = j.data;
+            document.getElementById("sPending").textContent = d.total_pending;
+            document.getElementById("sPendingDrafts").textContent = d.pending_drafts;
+            document.getElementById("sPendingPlans").textContent = d.pending_plans;
+            document.getElementById("sApprovedToday").textContent = d.approved_today;
+            const badge = document.getElementById("navBadge");
+            if (d.total_pending > 0) { badge.textContent = d.total_pending; badge.style.display = "inline"; }
+            else badge.style.display = "none";
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function loadDrafts() {
+    const showAll = document.getElementById("showAllToggle").checked;
+    const url = showAll ? "/api/approval/drafts" : "/api/approval/drafts/pending";
+    try {
+        const r = await fetch(url);
+        const j = await r.json();
+        const drafts = j.data || [];
+        document.getElementById("countDrafts").textContent = drafts.length;
+        const grid = document.getElementById("draftsGrid");
+        if (!drafts.length) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-check-double" style="color:var(--green);"></i><p>${showAll ? "Belum ada draf pesan." : "Tidak ada draf menunggu approval."}</p></div>`;
+            return;
+        }
+        grid.innerHTML = drafts.map(d => renderDraftCard(d)).join("");
+    } catch(e) { console.error(e); }
+}
+
+function renderDraftCard(d) {
+    const isDraft = d.status === "DRAFT";
+    const cardCls = d.status === "APPROVED" ? "card-approved" : d.status === "REJECTED" ? "card-rejected" : "";
+    const footer = isDraft
+        ? `<button class="btn-approve" onclick="approveDraft(${d.id})"><i class="fas fa-check"></i> Setujui</button>
+           <button class="btn-edit" onclick="startEditDraft(${d.id})"><i class="fas fa-pen"></i> Edit</button>
+           <button class="btn-reject" onclick="rejectDraft(${d.id})"><i class="fas fa-times"></i> Tolak</button>`
+        : `<div class="action-done">${d.status === "APPROVED" ? "✓ Disetujui" : "✗ Ditolak"} oleh ${d.approved_by || "—"}</div>`;
+
+    return `<div class="item-card ${cardCls}" id="dcard-${d.id}">
+      <div class="item-header">
+        <div class="item-header-left">${draftTypeLabel(d.draft_type)} ${magChip(d.magnitude)}</div>
+        ${statusBadge(d.status)}
+      </div>
+      <div class="item-body">
+        <div class="item-meta">
+          <span><i class="fas fa-map-marker-alt"></i> ${(d.location_desc||"—").substring(0,45)}</span>
+          <span><i class="fas fa-clock"></i> ${fmtTime(d.eq_timestamp)}</span>
+        </div>
+        <div class="content-box" id="content-${d.id}">${d.content||"—"}</div>
+        <textarea class="content-edit" id="editor-${d.id}" style="display:none;">${d.content||""}</textarea>
+        <div class="edit-actions" id="edit-actions-${d.id}">
+          <button class="btn-save" onclick="saveDraftEdit(${d.id})"><i class="fas fa-save"></i> Simpan</button>
+          <button class="btn-cancel-edit" onclick="cancelDraftEdit(${d.id})">Batal</button>
+        </div>
+        <div class="item-time"><i class="fas fa-clock"></i> ${fmtTime(d.created_at)}</div>
+      </div>
+      <div class="item-footer" id="footer-${d.id}">${footer}</div>
+    </div>`;
+}
+
+function startEditDraft(id) {
+    document.getElementById(`content-${id}`).style.display = "none";
+    const ed = document.getElementById(`editor-${id}`);
+    ed.value = document.getElementById(`content-${id}`).textContent;
+    ed.style.display = "block";
+    const ea = document.getElementById(`edit-actions-${id}`);
+    ea.style.display = "flex";
+    document.getElementById(`footer-${id}`).style.display = "none";
+}
+function cancelDraftEdit(id) {
+    document.getElementById(`editor-${id}`).style.display = "none";
+    document.getElementById(`content-${id}`).style.display = "block";
+    document.getElementById(`edit-actions-${id}`).style.display = "none";
+    document.getElementById(`footer-${id}`).style.display = "flex";
+}
+async function saveDraftEdit(id) {
+    const newContent = document.getElementById(`editor-${id}`).value.trim();
+    if (!newContent) { showToast("Konten tidak boleh kosong", "error"); return; }
+    try {
+        const r = await fetch(`/api/approval/draft/${id}/edit`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({content:newContent,officer_name:OFFICER})});
+        const j = await r.json();
+        if (j.status === "success") {
+            document.getElementById(`content-${id}`).textContent = newContent;
+            cancelDraftEdit(id);
+            showToast("Draf berhasil diedit", "success");
+            loadStats();
+        } else showToast(j.message || "Gagal", "error");
+    } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+async function approveDraft(id) {
+    try {
+        const r = await fetch(`/api/approval/draft/${id}/approve`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER})});
+        const j = await r.json();
+        if (j.status === "success") { showToast("Draf disetujui ✓", "success"); loadAll(); loadStats(); }
+        else showToast(j.message || "Gagal", "error");
+    } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+async function rejectDraft(id) {
+    const notes = prompt("Alasan penolakan (opsional):") || "";
+    try {
+        const r = await fetch(`/api/approval/draft/${id}/reject`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER,notes})});
+        const j = await r.json();
+        if (j.status === "success") { showToast("Draf ditolak", "info"); loadAll(); loadStats(); }
+        else showToast(j.message || "Gagal", "error");
+    } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+
+async function loadPlans() {
+    const showAll = document.getElementById("showAllToggle").checked;
+    const url = showAll ? "/api/approval/plans" : "/api/approval/plans/pending";
+    try {
+        const r = await fetch(url);
+        const j = await r.json();
+        const plans = j.data || [];
+        document.getElementById("countPlans").textContent = plans.length;
+        const grid = document.getElementById("plansGrid");
+        if (!plans.length) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-check-double" style="color:var(--green);"></i><p>${showAll ? "Belum ada rencana koordinasi." : "Tidak ada rencana menunggu approval."}</p></div>`;
+            return;
+        }
+        grid.innerHTML = plans.map(p => renderPlanCard(p)).join("");
+    } catch(e) { console.error(e); }
+}
+
+function renderPlanCard(p) {
+    const isDraft = p.status === "DRAFT";
+    const cardCls = p.status === "APPROVED" ? "card-approved" : p.status === "REJECTED" ? "card-rejected" : "";
+    const footer = isDraft
+        ? `<button class="btn-approve" onclick="approvePlan(${p.id})"><i class="fas fa-check"></i> Setujui</button>
+           <button class="btn-reject" onclick="rejectPlan(${p.id})"><i class="fas fa-times"></i> Tolak</button>`
+        : `<div class="action-done">${p.status === "APPROVED" ? "✓ Disetujui" : "✗ Ditolak"} oleh ${p.approved_by || "—"}</div>`;
+
+    const actionRows = (p.action_priorities || []).map(a => `
+      <tr>
+        <td>${prioChip(a.priority||"P3")}</td>
+        <td><strong>${a.action||"—"}</strong></td>
+        <td style="color:var(--text-2);">${a.description||"—"}</td>
+        <td style="white-space:nowrap;color:var(--muted);">+${a.timeline_hours||"?"}j</td>
+      </tr>`).join("");
+
+    return `<div class="item-card ${cardCls}" id="pcard-${p.id}">
+      <div class="item-header">
+        <div class="item-header-left">
+          <span class="type-badge type-plan">KOORDINASI</span>
+          ${magChip(p.magnitude)}
+          <span class="gen-tag ${p.generated_by === 'llm' ? 'llm' : ''}">${p.generated_by === 'llm' ? 'LLM' : 'Fallback'}</span>
+        </div>
+        ${statusBadge(p.status)}
+      </div>
+      <div class="item-body">
+        <div class="item-meta">
+          <span><i class="fas fa-map-marker-alt"></i> ${(p.location_desc||"—").substring(0,45)}</span>
+          <span><i class="fas fa-clock"></i> ${fmtTime(p.eq_timestamp)}</span>
+        </div>
+        <div class="resource-box">${(p.resource_mapping||"—").substring(0,220)}${(p.resource_mapping||"").length > 220 ? "…" : ""}</div>
+        ${actionRows ? `<div class="actions-label">Aksi Prioritas</div>
+        <div style="overflow-x:auto;">
+          <table class="action-table">
+            <thead><tr><th>Prior.</th><th>Aksi</th><th>Detail</th><th>Jam ke-</th></tr></thead>
+            <tbody>${actionRows}</tbody>
+          </table>
+        </div>` : ""}
+        <div class="timeline-note"><i class="fas fa-hourglass-half" style="color:var(--muted);"></i> ${p.estimated_timeline||"—"}</div>
+        <div class="item-time"><i class="fas fa-clock"></i> ${fmtTime(p.created_at)}</div>
+      </div>
+      <div class="item-footer">${footer}</div>
+    </div>`;
+}
+
+async function approvePlan(id) {
+    try {
+        const r = await fetch(`/api/approval/plan/${id}/approve`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER})});
+        const j = await r.json();
+        if (j.status === "success") { showToast("Rencana koordinasi disetujui ✓", "success"); loadAll(); loadStats(); }
+        else showToast(j.message || "Gagal", "error");
+    } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+async function rejectPlan(id) {
+    const notes = prompt("Alasan penolakan (opsional):") || "";
+    try {
+        const r = await fetch(`/api/approval/plan/${id}/reject`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER,notes})});
+        const j = await r.json();
+        if (j.status === "success") { showToast("Rencana koordinasi ditolak", "info"); loadAll(); loadStats(); }
+        else showToast(j.message || "Gagal", "error");
+    } catch(e) { showToast("Error: " + e.message, "error"); }
+}
+
+async function loadAudit() {
+    try {
+        const r = await fetch("/api/audit-log?limit=100");
+        const j = await r.json();
+        const logs = j.data || [];
+        const tbody = document.getElementById("auditBody");
+        if (!logs.length) {
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-clipboard"></i><p>Belum ada aktivitas.</p></td></tr>`;
+            return;
+        }
+        const tableNames = {communication_drafts:"Draf Pesan",coordination_plans:"Rencana Koordinasi"};
+        tbody.innerHTML = logs.map(l => {
+            const decCls = l.decision === "APPROVED" ? "decision-approved" : l.decision === "REJECTED" ? "decision-rejected" : "decision-edited";
+            return `<tr>
+              <td style="white-space:nowrap;color:var(--text-2);">${fmtTime(l.timestamp)}</td>
+              <td>${l.action_type||"—"}</td>
+              <td>${tableNames[l.item_table]||l.item_table}</td>
+              <td style="color:var(--muted);">#${l.item_id}</td>
+              <td class="${decCls}">${l.decision}</td>
+              <td>${l.officer_name||"—"}</td>
+              <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);" title="${l.notes||""}">${l.notes||"—"}</td>
+            </tr>`;
+        }).join("");
+    } catch(e) { console.error(e); }
+}
+
+function loadAll() {
+    loadDrafts();
+    loadPlans();
+}
+
+loadStats();
+loadDrafts();
+loadPlans();
+setInterval(() => { loadStats(); loadAll(); }, 30000);
+</script>
+</body>
+</html>

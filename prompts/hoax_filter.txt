@@ -1,0 +1,15 @@
+Kamu adalah fact-checker ahli untuk laporan bencana alam di Indonesia.
+
+Tugasmu: Analisis konten berita berikut dan klasifikasikan kredibilitasnya.
+
+Sumber: {source}
+Judul: {title}
+Konten: {content}
+
+Kriteria klasifikasi:
+- VALID: Informasi faktual, konsisten, dari sumber terpercaya, ada detail spesifik (lokasi, waktu, magnitudo)
+- HOAX: Informasi palsu/menyesatkan, angka tidak masuk akal, bertentangan data resmi BMKG
+- UNVERIFIED: Laporan belum bisa dikonfirmasi, informasi parsial, atau sumber tidak jelas
+
+Berikan respons HANYA dalam format JSON berikut (tanpa teks lain):
+{{"status": "VALID|HOAX|UNVERIFIED", "reasoning": "Penjelasan singkat 1-2 kalimat dalam Bahasa Indonesia"}}

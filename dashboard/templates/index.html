@@ -1,0 +1,1451 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CEPAT — BMKG Monitoring</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --border-2: #cbd5e1;
+      --text: #0f172a;
+      --text-2: #334155;
+      --text-3: #64748b;
+      --muted: #94a3b8;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --blue-bd: #bfdbfe;
+      --amber: #f59e0b;
+      --amber-bg: #fffbeb;
+      --amber-bd: #fde68a;
+      --orange: #f97316;
+      --orange-bg: #fff7ed;
+      --orange-bd: #fed7aa;
+      --red: #ef4444;
+      --red-bg: #fef2f2;
+      --red-bd: #fecaca;
+      --green: #10b981;
+      --green-bg: #ecfdf5;
+      --green-bd: #a7f3d0;
+      --violet: #7c3aed;
+      --violet-bg: #f5f3ff;
+      --violet-bd: #ddd6fe;
+      --shadow-sm: 0 1px 4px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+      --shadow-lg: 0 10px 32px rgba(0,0,0,.12);
+      --r: 12px;
+      --r-sm: 10px;
+      --r-xs: 6px;
+      --r-pill: 999px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { cursor: pointer; font-family: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 1px 8px rgba(0,0,0,.06);
+    }
+    .header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      height: 60px;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .brand-logo {
+      width: 52px; height: 52px;
+      background: #fff;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .brand-logo img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); }
+    .brand-name { font-size: .9rem; font-weight: 800; color: var(--text); line-height: 1; }
+    .brand-sub { font-size: .6rem; color: var(--text-3); margin-top: 2px; }
+
+    .header-nav {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+    @media (min-width: 768px) { .header-nav { display: flex; } }
+    .nav-item {
+      padding: 6px 14px;
+      border-radius: var(--r-xs);
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--text-3);
+      background: none;
+      border: none;
+      transition: color .12s, background .12s;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .nav-item:hover { color: var(--text); background: #f8fafc; }
+    .nav-item.active { color: var(--blue); background: var(--blue-bg); font-weight: 600; }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
+    .pill-live {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--green-bg); border: 1px solid var(--green-bd);
+      color: #059669; padding: 3px 10px;
+      border-radius: var(--r-pill); font-size: .65rem; font-weight: 700; letter-spacing: .06em;
+    }
+    .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: blink 2s ease infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+
+    #approvalNavLink {
+      display: none; align-items: center; gap: 5px;
+      background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
+      color: #dc2626; padding: 4px 10px; border-radius: var(--r-pill);
+      font-size: .68rem; font-weight: 600; transition: background .15s; white-space: nowrap;
+    }
+    #approvalNavLink:hover { background: rgba(239,68,68,.18); }
+    #approvalNavBadge {
+      background: var(--red); color: #fff; font-size: .58rem; font-weight: 700;
+      padding: 1px 5px; border-radius: var(--r-pill); min-width: 16px; text-align: center;
+    }
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #f8fafc; border: 1px solid var(--border) !important;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-3); position: relative; font-size: .85rem;
+      transition: background .12s, color .12s;
+    }
+    .icon-btn:hover { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-bd) !important; }
+    .notif-dot {
+      position: absolute; top: 4px; right: 5px;
+      width: 7px; height: 7px; background: var(--red); border-radius: 50%;
+      border: 2px solid var(--surface);
+    }
+    .user-chip {
+      display: flex; align-items: center; gap: 7px;
+      background: #f8fafc; border: 1px solid var(--border);
+      border-radius: var(--r-pill); padding: 3px 10px 3px 3px;
+      cursor: pointer; transition: background .12s;
+    }
+    .user-chip:hover { background: #f1f5f9; }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--blue); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .72rem; font-weight: 700; flex-shrink: 0;
+    }
+    .user-name { font-size: .78rem; font-weight: 600; color: var(--text); }
+    .user-arrow { font-size: .6rem; color: var(--muted); }
+
+    /* ── LAYOUT ── */
+    .app-main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 1rem 1rem calc(72px + env(safe-area-inset-bottom));
+    }
+    @media (min-width: 640px) { .app-main { padding: 1.5rem 1.5rem 2rem; } }
+
+    /* ── TABS ── */
+    .tab-section { display: none; animation: fadeUp .2s ease; }
+    .tab-section.active { display: block; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none} }
+    @media (min-width: 768px) { .tab-section { display: block !important; } }
+
+    /* ── SECTION HEADERS ── */
+    .sec-head {
+      display: flex; align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: .875rem; gap: .5rem;
+    }
+    .sec-title { font-size: .95rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .sec-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .sec-acts { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .card-header {
+      padding: .875rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .5rem; border-bottom: 1px solid var(--border);
+    }
+    .card-title { font-size: .85rem; font-weight: 700; color: var(--text); }
+    .card-sub { font-size: .68rem; color: var(--muted); margin-top: 1px; }
+    .card-action {
+      font-size: .75rem; color: var(--blue); font-weight: 600;
+      display: flex; align-items: center; gap: 3px;
+      cursor: pointer; transition: opacity .12s;
+    }
+    .card-action:hover { opacity: .7; }
+
+    /* ── ORCH STRIP ── */
+    .orch-strip {
+      background: linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);
+      border: 1px solid #bfdbfe; border-radius: var(--r-sm);
+      padding: .625rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .orch-left { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .orch-item { display: flex; align-items: center; gap: 6px; font-size: .74rem; }
+    .orch-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .orch-dot.on { background: var(--green); box-shadow: 0 0 0 3px rgba(16,185,129,.18); animation: blink 2s ease infinite; }
+    .orch-dot.off { background: var(--muted); }
+    .orch-lbl { color: var(--text-3); }
+    .orch-val { font-weight: 600; color: var(--text); }
+    .orch-actions { display: flex; gap: .5rem; flex-shrink: 0; }
+    .cd-txt { font-size: .68rem; color: var(--muted); white-space: nowrap; }
+    .cd-txt strong { color: var(--blue); font-weight: 700; }
+    .prog { width: 56px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .prog-bar { height: 100%; background: var(--blue); border-radius: 2px; transition: width 1s linear; }
+
+    /* ── STAT CARDS ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .75rem; margin-bottom: 1rem;
+    }
+    @media (min-width: 640px) { .stats-row { grid-template-columns: repeat(5, 1fr); gap: .875rem; } }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 1rem 1.125rem;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .15s, transform .15s;
+      display: flex; align-items: flex-start; gap: .875rem;
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .stat-iw {
+      width: 42px; height: 42px; border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .95rem; flex-shrink: 0;
+    }
+    .si-blue  { background: var(--blue-bg);   color: var(--blue); }
+    .si-amber { background: var(--amber-bg);  color: var(--amber); }
+    .si-orange{ background: var(--orange-bg); color: var(--orange); }
+    .si-violet{ background: var(--violet-bg); color: var(--violet); }
+    .si-green { background: var(--green-bg);  color: var(--green); }
+    .stat-body { min-width: 0; flex: 1; }
+    .stat-num {
+      font-size: clamp(1.35rem,3.5vw,1.7rem);
+      font-weight: 800; line-height: 1; letter-spacing: -.02em;
+      color: var(--text); margin-bottom: .2rem;
+    }
+    .stat-name { font-size: .68rem; font-weight: 600; color: var(--text-3); line-height: 1.3; }
+    .stat-note { font-size: .6rem; color: var(--muted); margin-top: .1rem; }
+    .stat-extra { display: none; }
+    @media (min-width: 640px) { .stat-extra { display: flex; } }
+
+    /* ── BERANDA GRID ── */
+    .beranda-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 900px) { .beranda-grid { grid-template-columns: 1fr 320px; } }
+    @media (min-width: 1100px) { .beranda-grid { grid-template-columns: 1fr 360px; } }
+
+    /* ── MAP ── */
+    .map-card { display: flex; flex-direction: column; }
+    #map { flex: 1; min-height: 240px; }
+    @media (min-width: 480px) { #map { min-height: 280px; } }
+    @media (min-width: 768px) { #map { min-height: 340px; } }
+    @media (min-width: 1024px) { #map { min-height: 380px; } }
+    .map-legend-row { display: flex; align-items: center; gap: .75rem; }
+    .leg-item { display: flex; align-items: center; gap: 4px; font-size: .63rem; color: var(--text-3); }
+    .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── ALERT SIDEBAR ── */
+    .alert-body { overflow-y: auto; -webkit-overflow-scrolling: touch; max-height: 430px; }
+    .alert-body::-webkit-scrollbar { width: 3px; }
+    .alert-body::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+    .alert-row { padding: .75rem 1rem; border-bottom: 1px solid #f8fafc; }
+    .alert-row:last-child { border-bottom: none; }
+    .alert-row.sev-hi  { border-left: 3px solid var(--red); }
+    .alert-row.sev-mid { border-left: 3px solid var(--amber); }
+    .alert-row.sev-lo  { border-left: 3px solid var(--blue); }
+    .alert-mag { font-size: .95rem; font-weight: 700; }
+    .alert-loc { font-size: .77rem; font-weight: 500; color: var(--text-2); margin-top: 1px; line-height: 1.3; }
+    .alert-meta { font-size: .66rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── EQ TERKINI ── */
+    .eq-item {
+      display: flex; align-items: center; gap: .875rem;
+      padding: .875rem 1rem; border-bottom: 1px solid #f4f7fa;
+      transition: background .1s;
+    }
+    .eq-item:last-child { border-bottom: none; }
+    .eq-item:hover { background: #fafcff; }
+    .eq-mag-chip {
+      width: 48px; height: 48px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .9rem; color: #fff; flex-shrink: 0;
+    }
+    .mc-crit { background: linear-gradient(135deg,#ef4444,#dc2626); }
+    .mc-high { background: linear-gradient(135deg,#f97316,#ea580c); }
+    .mc-med  { background: linear-gradient(135deg,#f59e0b,#d97706); }
+    .mc-low  { background: linear-gradient(135deg,#3b82f6,#2563eb); }
+    .mc-vlow { background: linear-gradient(135deg,#10b981,#059669); }
+    .eq-info { flex: 1; min-width: 0; }
+    .eq-loc { font-size: .82rem; font-weight: 600; color: var(--text); line-height: 1.3; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .eq-meta-row { font-size: .7rem; color: var(--muted); display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .eq-sep { color: var(--border-2); }
+    .felt-badge { flex-shrink: 0; font-size: .63rem; font-weight: 600; padding: 3px 9px; border-radius: var(--r-pill); white-space: nowrap; }
+    .felt-yes { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-bd); }
+    .felt-no  { background: #f8fafc; color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── SITREP CARDS ── */
+    .sitrep-grid { display: grid; grid-template-columns: 1fr; gap: .875rem; padding: 1rem; }
+    @media (min-width: 480px) { .sitrep-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (min-width: 900px) { .sitrep-grid { grid-template-columns: repeat(3,1fr); } }
+    @media (min-width: 1200px) { .sitrep-grid { grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); } }
+    .report-grid { display: grid; grid-template-columns: 1fr; gap: .875rem; padding: 1rem; }
+    @media (min-width: 600px) { .report-grid { grid-template-columns: repeat(2,1fr); } }
+
+    .sc {
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      background: var(--surface); padding: .875rem;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: box-shadow .15s, border-color .15s;
+      display: flex; flex-direction: column;
+    }
+    .sc::before { content:""; position:absolute; top:0; left:0; right:0; height:3px; }
+    .sc.rc::before { background: var(--red); }
+    .sc.rh::before { background: var(--amber); }
+    .sc.rm::before { background: var(--blue); }
+    .sc.rl::before { background: var(--green); }
+    .sc:hover { box-shadow: var(--shadow-md); border-color: var(--border-2); }
+    .sc-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .sc-mag { font-size: 1.05rem; font-weight: 800; margin: .5rem 0 .1rem; letter-spacing: -.01em; }
+    .sc-loc { font-size: .74rem; font-weight: 500; color: var(--text-2); line-height: 1.3; }
+    .sc-sum { font-size: .74rem; color: var(--text-3); margin-top: .5rem; line-height: 1.55; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .sc-foot { margin-top: .75rem; display: flex; align-items: center; justify-content: space-between; }
+
+    /* ── TABLE ── */
+    .tbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: .5rem; padding: .875rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .lbl { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .lbl i { font-size: .76rem; }
+    .refresh-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .search-wrap {
+      display: flex; align-items: center;
+      background: #f8fafc; border: 1px solid var(--border);
+      border-radius: var(--r-xs); padding: 5px 10px; gap: 6px;
+      min-width: 180px;
+    }
+    .search-wrap i { color: var(--muted); font-size: .78rem; }
+    .search-wrap input {
+      background: none; border: none; outline: none;
+      font-family: inherit; font-size: .8rem; color: var(--text); width: 130px;
+    }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tbl-scroll::-webkit-scrollbar { height: 4px; }
+    .tbl-scroll::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+    .tbl { width: 100%; border-collapse: collapse; min-width: 540px; }
+    .tbl th {
+      font-size: .63rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted);
+      padding: .625rem .875rem; border-bottom: 1px solid var(--border);
+      white-space: nowrap; text-align: left; background: #fafafa;
+    }
+    .tbl td { padding: .7rem .875rem; vertical-align: middle; font-size: .82rem; border-bottom: 1px solid #f4f7fa; }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: #fafcff; }
+    .row-num { font-size: .72rem; color: var(--muted); font-weight: 500; }
+    .pagination-wrap {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: .375rem; padding: .75rem 1rem;
+      border-top: 1px solid var(--border); font-size: .75rem;
+    }
+    .page-info { color: var(--muted); font-size: .72rem; margin-right: .25rem; }
+    .page-btn {
+      padding: 4px 10px; border-radius: var(--r-xs);
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--text-2); font-size: .73rem; font-weight: 500;
+      cursor: pointer; transition: background .1s;
+    }
+    .page-btn:hover { background: var(--bg); }
+    .page-btn.pg-active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    /* ── BADGES ── */
+    .risk-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: var(--r-pill); font-size: .61rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+    .risk-critical { background: var(--red-bg);    color: #991b1b; }
+    .risk-high     { background: var(--amber-bg);  color: #92400e; }
+    .risk-medium   { background: var(--blue-bg);   color: #1e40af; }
+    .risk-low      { background: var(--green-bg);  color: #065f46; }
+    .gen-badge { font-size: .6rem; font-weight: 700; padding: 2px 6px; border-radius: var(--r-xs); }
+    .gen-llm { background: var(--violet-bg); color: var(--violet); }
+    .gen-fallback { background: #f1f5f9; color: #64748b; }
+    .mag-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 50px; padding: 3px 8px; border-radius: var(--r-xs); font-weight: 700; font-size: .79rem; }
+    .mag-critical { background: #fee2e2; color: #991b1b; }
+    .mag-warning  { background: #fef3c7; color: #92400e; }
+    .mag-low      { background: #dbeafe; color: #1e40af; }
+    .mag-very-low { background: #d1fae5; color: #065f46; }
+    .status-chip { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: var(--r-pill); font-size: .63rem; font-weight: 600; letter-spacing: .04em; }
+    .status-new { background: var(--red-bg);   color: #991b1b; border: 1px solid var(--red-bd); }
+    .status-ack { background: var(--green-bg); color: #065f46; border: 1px solid var(--green-bd); }
+    .pipe-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: var(--r-xs); font-size: .6rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+    .pipe-pending    { background: #f1f5f9;        color: #64748b; }
+    .pipe-processing { background: var(--blue-bg);  color: #1e40af; }
+    .pipe-done       { background: var(--green-bg); color: #065f46; }
+    .pipe-failed     { background: var(--red-bg);   color: #991b1b; }
+    .pipe-skipped    { background: #f1f5f9;         color: #94a3b8; }
+    .cred-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: var(--r-xs); font-size: .6rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+    .cred-valid      { background: var(--green-bg); color: #065f46; }
+    .cred-hoax       { background: var(--red-bg);   color: #991b1b; }
+    .cred-unverified { background: #f1f5f9;         color: #64748b; }
+
+    /* ── BUTTONS ── */
+    .btn-ack, .btn-pipe {
+      padding: 5px 10px; border-radius: var(--r-xs); font-size: .71rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: opacity .12s; border: 1px solid; touch-action: manipulation; min-height: 30px;
+    }
+    .btn-ack  { background: var(--green-bg); color: var(--green); border-color: var(--green-bd); }
+    .btn-pipe { background: var(--violet-bg); color: var(--violet); border-color: var(--violet-bd); }
+    .btn-ack:hover, .btn-pipe:hover { opacity: .75; }
+    .btn-ack:disabled, .btn-pipe:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-refresh {
+      padding: 5px 12px; border-radius: var(--r-xs); font-size: .73rem; font-weight: 600;
+      background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-bd);
+      display: inline-flex; align-items: center; gap: 5px; transition: background .1s; min-height: 30px;
+    }
+    .btn-refresh:hover { background: #dbeafe; }
+    .btn-poll {
+      padding: 5px 12px; border-radius: var(--r-xs); font-size: .73rem; font-weight: 600;
+      background: var(--surface); color: var(--text-2); border: 1px solid var(--border-2);
+      display: inline-flex; align-items: center; gap: 5px; transition: background .1s; min-height: 30px;
+    }
+    .btn-poll:hover { background: var(--bg); }
+    .btn-poll:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-filter {
+      padding: 5px 12px; border-radius: var(--r-xs); font-size: .73rem; font-weight: 600;
+      background: var(--surface); color: var(--text-2); border: 1px solid var(--border-2);
+      display: inline-flex; align-items: center; gap: 5px; min-height: 30px; transition: background .1s;
+    }
+    .btn-filter:hover { background: var(--bg); }
+
+    /* ── MISC ── */
+    .loc-name { font-weight: 500; line-height: 1.3; }
+    .loc-coord { font-size: .66rem; color: var(--muted); margin-top: 1px; }
+    .tsunami-yes { color: var(--red); font-weight: 600; }
+    .tsunami-no  { color: var(--green); }
+    .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
+    .empty i { font-size: 1.5rem; display: block; margin-bottom: .5rem; }
+    .empty p { font-size: .78rem; margin: 0; }
+    @keyframes rowPulse { 0%{background:#dbeafe}100%{background:transparent} }
+    .row-new { animation: rowPulse 1.8s ease-out; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .spin { animation: spin .7s linear infinite; display: inline-block; }
+
+    /* ── MODAL ── */
+    .modal .modal-content { border-radius: var(--r); border: none; box-shadow: var(--shadow-lg); }
+    .modal-risk-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+    .risk-bar { width: 4px; border-radius: 4px; align-self: stretch; flex-shrink: 0; }
+    .rec-list { list-style: none; padding: 0; margin: 0; }
+    .rec-list li { display: flex; gap: 10px; padding: .5rem 0; border-bottom: 1px solid #f4f7fa; font-size: .85rem; line-height: 1.5; }
+    .rec-list li:last-child { border-bottom: none; }
+    .rec-n { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--blue-bg); color: var(--blue); display: flex; align-items: center; justify-content: center; font-size: .67rem; font-weight: 700; }
+
+    /* ── TOAST ── */
+    .toast-z { position: fixed; bottom: 5rem; right: 1rem; z-index: 3000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    @media (min-width: 640px) { .toast-z { bottom: 1.5rem; right: 1.5rem; } }
+    .toast { background: #1e293b; color: #f1f5f9; border-radius: var(--r-sm); padding: 10px 14px; font-size: .81rem; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 9px; min-width: 230px; max-width: 320px; animation: tIn .25s ease; transition: opacity .3s; pointer-events: auto; }
+    @keyframes tIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none} }
+    .toast-critical .ti { color: #f87171; }
+    .toast-success  .ti { color: #34d399; }
+    .toast-info     .ti { color: #60a5fa; }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: var(--surface); border-top: 1px solid var(--border); z-index: 150; padding: 6px 0 calc(6px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,.06); }
+    @media (min-width: 768px) { .bottom-nav { display: none; } }
+    .bn-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--muted); padding: 5px 6px; font-size: .58rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; transition: color .15s; background: none; border: none; }
+    .bn-btn.active { color: var(--blue); }
+    .bn-btn i { font-size: 1.05rem; transition: transform .15s; }
+    .bn-btn.active i { transform: scale(1.15); }
+    .bn-badge { background: var(--red); color: #fff; font-size: .55rem; font-weight: 700; padding: 1px 4px; border-radius: var(--r-pill); min-width: 14px; text-align: center; margin-top: -2px; }
+
+    /* ── MOBILE-M OVERRIDES (max 639px) ── */
+    @media (max-width: 639px) {
+      /* Stats row → horizontal scroll, semua 5 kartu tampil */
+      .stats-row {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        gap: .625rem;
+        padding-bottom: 4px;
+        margin-bottom: .875rem;
+      }
+      .stats-row::-webkit-scrollbar { display: none; }
+      .stat-card {
+        min-width: 130px;
+        flex-shrink: 0;
+        scroll-snap-align: start;
+        padding: .75rem .875rem;
+      }
+      .stat-extra { display: flex; }
+
+      /* Stat card isi lebih compact */
+      .stat-iw { width: 34px; height: 34px; font-size: .8rem; border-radius: var(--r-xs); }
+      .stat-num { font-size: 1.4rem; }
+      .stat-name { font-size: .62rem; }
+      .stat-note { font-size: .57rem; }
+
+      /* Card header lebih compact */
+      .card-header { padding: .75rem .875rem; }
+
+      /* Orch strip lebih compact */
+      .orch-strip { padding: .5rem .875rem; gap: .375rem; margin-bottom: .875rem; }
+      .orch-item.hide-mob { display: none; }
+
+      /* Map legend wrap rapi */
+      .map-legend-row { gap: .375rem; flex-wrap: wrap; justify-content: flex-end; }
+      .leg-item { font-size: .57rem; }
+      .leg-dot { width: 7px; height: 7px; }
+
+      /* Beranda grid gap lebih kecil */
+      .beranda-grid { gap: .75rem; }
+
+      /* Card margin lebih kecil */
+      .card { margin-bottom: .75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════ HEADER ════ -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="CEPAT" />
+      </div>
+      <div>
+        <div class="brand-name">CEPAT</div>
+        <div class="brand-sub">BMKG Monitoring</div>
+      </div>
+    </div>
+
+
+    <div class="header-actions">
+      <a href="/approval" id="approvalNavLink">
+        <i class="fas fa-clipboard-check" style="font-size:.7rem;"></i>
+        Approval
+        <span id="approvalNavBadge">0</span>
+      </a>
+      <div class="pill-live d-none d-sm-flex">
+        <div class="live-dot"></div>
+        LIVE
+      </div>
+      <button class="icon-btn" id="notifBtn" title="Notifikasi">
+        <i class="fas fa-bell"></i>
+        <span class="notif-dot" id="notifDot" style="display:none;"></span>
+      </button>
+      <div class="user-chip">
+        <div class="user-avatar">A</div>
+        <span class="user-name d-none d-sm-inline">Admin</span>
+        <i class="fas fa-chevron-down user-arrow d-none d-sm-inline"></i>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ════ MAIN ════ -->
+<main class="app-main">
+
+  <!-- ┌── TAB: DASHBOARD (BERANDA) ──┐ -->
+  <section class="tab-section active" id="tab-beranda">
+
+    <!-- Orchestrator Strip -->
+    <div class="orch-strip">
+      <div class="orch-left">
+        <div class="orch-item">
+          <div class="orch-dot off" id="orchDot"></div>
+          <span class="orch-lbl">Orchestrator</span>
+          <span class="orch-val" id="orchStatus">—</span>
+        </div>
+        <div class="orch-item hide-mob">
+          <i class="fas fa-clock" style="font-size:.68rem;color:var(--muted);"></i>
+          <span class="orch-lbl">Siklus:</span>
+          <span class="orch-val" id="orchCycle">—</span>
+        </div>
+        <div class="orch-item d-none d-sm-flex">
+          <span class="cd-txt">Auto-refresh: <strong id="countNum">60</strong>s</span>
+          <div class="prog" style="margin-left:6px;">
+            <div class="prog-bar" id="progressBar" style="width:100%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="orch-actions">
+        <button class="btn-poll" id="forcePollBtn" onclick="forcePoll()">
+          <i class="fas fa-cloud-download-alt"></i>
+          <span class="d-none d-sm-inline"> Fetch BMKG</span>
+        </button>
+        <button class="btn-refresh" onclick="loadAll()">
+          <i class="fas fa-sync-alt"></i>
+          <span class="d-none d-sm-inline"> Refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-iw si-blue"><i class="fas fa-wave-square"></i></div>
+        <div class="stat-body">
+          <div class="stat-num" id="sTotal">—</div>
+          <div class="stat-name">Total Gempa</div>
+          <div class="stat-note" id="sSubTotal">Semua catatan</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-iw si-amber"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-body">
+          <div class="stat-num" id="sHighMag">—</div>
+          <div class="stat-name">Dirasakan M ≥ 5</div>
+          <div class="stat-note">Prioritas tinggi</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-iw si-orange"><i class="fas fa-clock"></i></div>
+        <div class="stat-body">
+          <div class="stat-num" id="sNew">—</div>
+          <div class="stat-name">Belum Selesai</div>
+          <div class="stat-note">Status NEW</div>
+        </div>
+      </div>
+      <div class="stat-card stat-extra">
+        <div class="stat-iw si-violet"><i class="fas fa-file-medical-alt"></i></div>
+        <div class="stat-body">
+          <div class="stat-num" id="sSitrep">—</div>
+          <div class="stat-name" id="sSitrepSub">Laporan Report</div>
+        </div>
+      </div>
+      <div class="stat-card stat-extra">
+        <div class="stat-iw si-green"><i class="fas fa-satellite-dish"></i></div>
+        <div class="stat-body">
+          <div class="stat-num" id="sAgentStatus" style="font-size:1rem;">—</div>
+          <div class="stat-name">Aktif</div>
+          <div class="stat-note" id="sPollInfo">Menghubungkan…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map + Recent Earthquakes -->
+    <div class="beranda-grid">
+      <div class="card map-card" style="margin-bottom:0;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">
+              <i class="fas fa-map-marked-alt" style="color:var(--blue);margin-right:6px;"></i>Peta Sebaran Gempa
+            </div>
+            <div class="card-sub">Indonesia — 24 jam terakhir</div>
+          </div>
+          <div class="map-legend-row">
+            <div class="leg-item"><div class="leg-dot" style="background:#6ee7b7;"></div><span>&lt; 4.0</span></div>
+            <div class="leg-item"><div class="leg-dot" style="background:#fbbf24;"></div><span>4.0–5.0</span></div>
+            <div class="leg-item"><div class="leg-dot" style="background:#f97316;"></div><span>5.0–6.0</span></div>
+            <div class="leg-item"><div class="leg-dot" style="background:#ef4444;"></div><span>≥ 6.0</span></div>
+          </div>
+        </div>
+        <div id="map"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Gempa Terkini</div>
+            <div class="card-sub">Update real-time dari BMKG</div>
+          </div>
+          <span class="card-action" onclick="switchTab('arsip')">
+            Lihat semua <i class="fas fa-chevron-right" style="font-size:.6rem;"></i>
+          </span>
+        </div>
+        <div id="recentList">
+          <div class="empty"><i class="fas fa-spinner spin"></i><p>Memuat…</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Laporan Gempa -->
+    <div style="margin-top:1.5rem;">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Laporan Gempa</div>
+          <div class="sec-sub">Laporan resmi dari tim BMKG</div>
+        </div>
+        <div class="sec-acts">
+          <button class="btn-refresh" onclick="loadSitreps()">
+            <i class="fas fa-sync-alt"></i>
+            <span class="d-none d-sm-inline"> Refresh</span>
+          </button>
+          <span class="card-action" onclick="switchTab('laporan')">
+            Lihat semua <i class="fas fa-chevron-right" style="font-size:.6rem;"></i>
+          </span>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="report-grid" id="sitrepGridHome">
+          <div class="empty" style="grid-column:1/-1;">
+            <i class="fas fa-spinner spin"></i>
+            <p>Memuat Laporan…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daftar Kejadian Gempa -->
+    <div style="margin-top:1.5rem;">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Daftar Kejadian Gempa</div>
+          <div class="sec-sub" id="tableCountSub">Memuat kejadian…</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header" style="flex-wrap:wrap;gap:.5rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+            <div class="search-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" id="eqSearchInput" placeholder="Cari gempa..." oninput="filterTable()" />
+            </div>
+            <button class="btn-filter">
+              <i class="fas fa-sliders-h"></i> Filter
+            </button>
+          </div>
+          <div class="refresh-row">
+            <span class="cd-txt d-none d-sm-inline">Refresh: <strong id="countNum2">60</strong>s</span>
+            <div class="prog d-none d-sm-flex">
+              <div class="prog-bar" id="progressBar2" style="width:100%;"></div>
+            </div>
+            <button class="btn-poll" onclick="forcePoll()">
+              <i class="fas fa-cloud-download-alt"></i>
+              <span class="d-none d-sm-inline"> Fetch</span>
+            </button>
+            <button class="btn-refresh" onclick="loadData()">
+              <i class="fas fa-sync-alt"></i>
+              <span class="d-none d-sm-inline"> Refresh</span>
+            </button>
+          </div>
+        </div>
+        <div class="tbl-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Kejadian / Lokasi</th>
+                <th>Magnitudo <i class="fas fa-sort" style="font-size:.5rem;opacity:.4;"></i></th>
+                <th>Waktu <i class="fas fa-sort" style="font-size:.5rem;opacity:.4;"></i></th>
+                <th>Status</th>
+                <th>Laporan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="eqTable">
+              <tr><td colspan="7" class="empty">
+                <i class="fas fa-spinner spin" style="font-size:1.1rem;"></i>
+                <p>Memuat data gempa…</p>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-wrap" id="eqPagination"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ┌── TAB: LAPORAN ──┐ -->
+  <section class="tab-section" id="tab-laporan">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            <i class="fas fa-file-medical-alt" style="color:var(--violet);margin-right:6px;"></i>Situation Reports
+          </div>
+          <div class="card-sub" id="sitrepBadge"></div>
+        </div>
+        <span class="card-action" onclick="switchTab('beranda')">
+          <i class="fas fa-chevron-left" style="font-size:.6rem;"></i> Kembali
+        </span>
+      </div>
+      <div class="sitrep-grid" id="sitrepGrid">
+        <div class="empty" style="grid-column:1/-1;">
+          <i class="fas fa-spinner spin"></i>
+          <p>Memuat Situation Reports…</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ┌── TAB: ANALISA ──┐ -->
+  <section class="tab-section" id="tab-analisa">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            <i class="fas fa-newspaper" style="color:var(--blue);margin-right:6px;"></i>Laporan Sumber Berita
+          </div>
+          <div class="card-sub" id="intelBadge"></div>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Sumber</th>
+              <th>Judul Berita</th>
+              <th>Kredibilitas</th>
+              <th>Alasan AI</th>
+              <th>Waktu</th>
+            </tr>
+          </thead>
+          <tbody id="intelTable">
+            <tr><td colspan="5" class="empty"><i class="fas fa-spinner spin"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ┌── TAB: ARSIP ──┐ -->
+  <section class="tab-section" id="tab-arsip">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            <i class="fas fa-box-archive" style="margin-right:6px;"></i>Arsip Gempa
+          </div>
+          <div class="card-sub" id="tableCount"></div>
+        </div>
+        <div class="refresh-row">
+          <button class="btn-poll" onclick="forcePoll()">
+            <i class="fas fa-cloud-download-alt"></i>
+            <span class="d-none d-sm-inline"> Fetch</span>
+          </button>
+          <button class="btn-refresh" onclick="loadData()">
+            <i class="fas fa-sync-alt"></i>
+            <span class="d-none d-sm-inline"> Refresh</span>
+          </button>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Magnitudo</th>
+              <th>Lokasi</th>
+              <th>Kedalaman</th>
+              <th>Waktu (WIB)</th>
+              <th>Tsunami</th>
+              <th>Status</th>
+              <th>Pipeline</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="eqTableArsip">
+            <tr><td colspan="8" class="empty">
+              <i class="fas fa-spinner spin" style="font-size:1.1rem;"></i>
+              <p>Memuat data gempa…</p>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ════ BOTTOM NAV ════ -->
+<nav class="bottom-nav">
+  <button class="bn-btn active" id="bn-beranda" onclick="switchTab('beranda')">
+    <i class="fas fa-grip-horizontal"></i><span>Beranda</span>
+  </button>
+  <button class="bn-btn" id="bn-laporan" onclick="switchTab('laporan')">
+    <i class="fas fa-file-lines"></i><span>Laporan</span>
+  </button>
+  <button class="bn-btn" id="bn-analisa" onclick="switchTab('analisa')">
+    <i class="fas fa-chart-bar"></i><span>Analisa</span>
+  </button>
+  <button class="bn-btn" id="bn-arsip" onclick="switchTab('arsip')">
+    <i class="fas fa-box-archive"></i><span>Arsip</span>
+    <span class="bn-badge" id="bnBadge" style="display:none;">0</span>
+  </button>
+</nav>
+
+<!-- ════ MODAL: Sitrep ════ -->
+<div class="modal fade" id="sitrepModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-risk-head" id="modalHeader">
+        <div class="d-flex align-items-start gap-3">
+          <div class="risk-bar" id="modalRiskBar"></div>
+          <div style="flex:1;min-width:0;">
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+              <span class="risk-badge" id="modalRiskBadge"></span>
+              <span class="gen-badge"  id="modalGenBadge"></span>
+            </div>
+            <div style="font-size:1rem;font-weight:700;line-height:1.3;" id="modalTitle"></div>
+            <div style="font-size:.73rem;color:var(--muted);margin-top:2px;" id="modalSubtitle"></div>
+          </div>
+          <button type="button" class="btn-close flex-shrink-0" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:1.25rem;">
+        <div class="mb-4">
+          <div class="lbl mb-2"><i class="fas fa-align-left"></i>Ringkasan Kejadian</div>
+          <p id="modalSummary" style="font-size:.86rem;line-height:1.7;color:var(--text-2);"></p>
+        </div>
+        <div class="mb-4">
+          <div class="lbl mb-2"><i class="fas fa-map-pin"></i>Wilayah Terdampak</div>
+          <p id="modalAffected" style="font-size:.86rem;color:var(--text-2);"></p>
+        </div>
+        <div class="mb-4">
+          <div class="lbl mb-2"><i class="fas fa-shield-alt"></i>Justifikasi Risiko</div>
+          <p id="modalRiskJust" style="font-size:.86rem;color:var(--text-2);"></p>
+        </div>
+        <div class="mb-4">
+          <div class="lbl mb-2"><i class="fas fa-tasks"></i>Rekomendasi Tindakan</div>
+          <ol class="rec-list" id="modalRecs"></ol>
+        </div>
+        <div class="mb-4">
+          <div class="lbl mb-2"><i class="fas fa-newspaper"></i>Sumber Berita Terkait</div>
+          <div id="modalIntel" style="font-size:.82rem;"></div>
+        </div>
+        <div id="modalNotesWrap" style="display:none;">
+          <div class="lbl mb-2"><i class="fas fa-sticky-note"></i>Catatan</div>
+          <p id="modalNotes" style="font-size:.8rem;color:var(--muted);font-style:italic;"></p>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:.75rem 1.25rem;border-top:1px solid var(--border);">
+        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-z" id="toastZone"></div>
+
+<!-- ════ SCRIPTS ════ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+
+/* ── Tab Switching ── */
+let currentTab = "beranda";
+function switchTab(tab) {
+  document.querySelectorAll(".tab-section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".bn-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + tab).classList.add("active");
+  const btn = document.getElementById("bn-" + tab);
+  if (btn) btn.classList.add("active");
+  const navBtn = document.getElementById("nav-" + tab);
+  if (navBtn) navBtn.classList.add("active");
+  else document.getElementById("nav-beranda").classList.add("active");
+  currentTab = tab;
+  if (tab === "beranda") setTimeout(() => { try { map.invalidateSize(); } catch(e){} }, 150);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ── Maps ── */
+const TILE_URL  = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const TILE_OPTS = { attribution: "&copy; OpenStreetMap contributors", maxZoom: 19 };
+let map;
+try {
+  map = L.map("map", { zoomControl: true, attributionControl: false }).setView([-2.5, 118.0], 5);
+  L.tileLayer(TILE_URL, TILE_OPTS).addTo(map);
+  setTimeout(() => { map.invalidateSize(); }, 200);
+} catch(e) { console.error("Leaflet init error:", e); }
+let mainMarkers = [];
+
+/* ── Helpers ── */
+function magColor(m)      { return m>=6?"#EF4444":m>=5?"#F97316":m>=3?"#3B82F6":"#10B981"; }
+function magChipClass(m)  { return m>=6?"mag-critical":m>=5?"mag-warning":m>=3?"mag-low":"mag-very-low"; }
+function mcClass(m)       { return m>=6?"mc-crit":m>=5?"mc-high":m>=4?"mc-med":m>=3?"mc-low":"mc-vlow"; }
+function riskClass(r)     { return ({CRITICAL:"risk-critical",HIGH:"risk-high",MEDIUM:"risk-medium",LOW:"risk-low"}[r])||"risk-medium"; }
+function riskCardClass(r) { return ({CRITICAL:"rc",HIGH:"rh",MEDIUM:"rm",LOW:"rl"}[r])||"rm"; }
+function riskBarColor(r)  { return ({CRITICAL:"#EF4444",HIGH:"#F59E0B",MEDIUM:"#3B82F6",LOW:"#10B981"}[r])||"#3B82F6"; }
+function credClass(s)     { return ({VALID:"cred-valid",HOAX:"cred-hoax",UNVERIFIED:"cred-unverified"}[s])||"cred-unverified"; }
+function pipeClass(s)     { return ({PENDING:"pipe-pending",PROCESSING:"pipe-processing",DONE:"pipe-done",FAILED:"pipe-failed",SKIPPED:"pipe-skipped"}[s])||"pipe-pending"; }
+
+function fmtTime(ts) {
+  if (!ts) return "—";
+  try {
+    const d = new Date(ts);
+    if (isNaN(d)) return ts;
+    return d.toLocaleString("id-ID", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", timeZone:"Asia/Jakarta" });
+  } catch { return ts; }
+}
+function timeAgo(ts) {
+  if (!ts) return "—";
+  try {
+    const diff = Date.now() - new Date(ts).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return "baru saja";
+    if (m < 60) return m + "m lalu";
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + "j lalu";
+    return Math.floor(h / 24) + "h lalu";
+  } catch { return "—"; }
+}
+function trunc(s, n) { return s && s.length > n ? s.substring(0, n) + "…" : s || "—"; }
+function isTsunami(t) { return t && t.toLowerCase().includes("berpotensi") && !t.toLowerCase().includes("tidak"); }
+function isFelt(eq)   { return eq.magnitude >= 5 && (eq.depth_km || 0) <= 70; }
+
+function showToast(msg, type = "info") {
+  const z = document.getElementById("toastZone");
+  const d = document.createElement("div");
+  d.className = "toast toast-" + type;
+  const ic = { critical:"exclamation-triangle", success:"check-circle", info:"info-circle" };
+  d.innerHTML = `<i class="fas fa-${ic[type]||"info-circle"} ti" style="font-size:.95rem;flex-shrink:0;"></i><div>${msg}</div>`;
+  z.appendChild(d);
+  setTimeout(() => { d.style.opacity = "0"; setTimeout(() => d.remove(), 400); }, 4500);
+}
+
+/* ── Map ── */
+function updateMaps(eqs) {
+  if (!map) return;
+  mainMarkers.forEach(m => map.removeLayer(m)); mainMarkers = [];
+  eqs.forEach(eq => {
+    if (!eq.latitude || !eq.longitude) return;
+    const col = magColor(eq.magnitude);
+    const tsuHtml = isTsunami(eq.tsunami_potential)
+      ? `<span style="color:#EF4444;font-weight:600;">⚠️ Berpotensi Tsunami</span>`
+      : `<span style="color:#10B981;">✔️ Tidak Berpotensi Tsunami</span>`;
+    const popup = `<div style="font-family:'Inter',sans-serif;min-width:210px;">
+      <div style="font-weight:800;font-size:1rem;color:${col};margin-bottom:5px;">M ${eq.magnitude}</div>
+      <div style="font-weight:600;font-size:.8rem;margin-bottom:7px;line-height:1.4;">${eq.location_desc}</div>
+      <div style="font-size:.73rem;color:#64748B;line-height:1.9;">
+        <div><i class="fas fa-arrow-down" style="width:14px;"></i> ${eq.depth_km||"?"} km kedalaman</div>
+        <div><i class="fas fa-clock" style="width:14px;"></i> ${fmtTime(eq.timestamp)}</div>
+        <div style="margin-top:2px;">${tsuHtml}</div>
+      </div></div>`;
+    const opts = { radius: Math.max(5, eq.magnitude * 2.8), fillColor: col, color: "#fff", weight: 1.5, opacity: 1, fillOpacity: .82 };
+    const c1 = L.circleMarker([eq.latitude, eq.longitude], opts).addTo(map);
+    c1.bindPopup(popup); mainMarkers.push(c1);
+  });
+}
+
+/* ── Alert Sidebar (kept for backward compat) ── */
+function updateAlerts(eqs) {
+  const el = document.getElementById("alertList");
+  if (!el) return;
+  const high = eqs.filter(e => e.magnitude >= 5);
+  const cnt  = document.getElementById("alertCount");
+  if (cnt) cnt.textContent = high.length ? high.length + " gempa" : "";
+  if (!high.length) { el.innerHTML = `<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>Tidak ada gempa M ≥ 5</p></div>`; return; }
+  el.innerHTML = high.slice(0,12).map(eq => `
+    <div class="alert-row ${eq.magnitude>=6?"sev-hi":eq.magnitude>=5?"sev-mid":"sev-lo"}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div class="alert-mag" style="color:${magColor(eq.magnitude)};">M ${eq.magnitude}</div>
+          <div class="alert-loc">${trunc(eq.location_desc,52)}</div>
+          <div class="alert-meta"><i class="fas fa-clock"></i> ${timeAgo(eq.timestamp)} &nbsp;·&nbsp; <i class="fas fa-arrow-down"></i> ${eq.depth_km||"?"} km</div>
+        </div>
+        <span class="status-chip ${eq.status==="NEW"?"status-new":"status-ack"}">
+          ${eq.status==="NEW"?'<i class="fas fa-circle" style="font-size:.45rem;"></i>':'<i class="fas fa-check" style="font-size:.58rem;"></i>'}
+          ${eq.status}
+        </span>
+      </div>
+    </div>`).join("");
+}
+
+/* ── Gempa Terkini ── */
+function updateRecentList(eqs) {
+  const el    = document.getElementById("recentList");
+  const items = eqs.slice(0, 10);
+  if (!items.length) { el.innerHTML = `<div class="empty"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>Tidak ada data gempa</p></div>`; return; }
+  el.innerHTML = items.map(eq => `
+    <div class="eq-item">
+      <div class="eq-mag-chip ${mcClass(eq.magnitude)}">${eq.magnitude}</div>
+      <div class="eq-info">
+        <div class="eq-loc">${eq.location_desc}</div>
+        <div class="eq-meta-row">
+          <span>${eq.depth_km ? eq.depth_km + " km" : "—"}</span>
+          <span class="eq-sep">•</span>
+          <span>${timeAgo(eq.timestamp)}</span>
+        </div>
+      </div>
+      <span class="felt-badge ${isFelt(eq)?"felt-yes":"felt-no"}">${isFelt(eq)?"Dirasakan":"Tidak Dirasakan"}</span>
+    </div>`).join("");
+}
+
+/* ── Sitreps ── */
+async function loadSitreps() {
+  try {
+    const res  = await fetch("/api/situation-reports?limit=12");
+    const json = await res.json();
+    if (json.status !== "success") {
+      [document.getElementById("sitrepGrid"), document.getElementById("sitrepGridHome")].forEach(g => {
+        if (g) g.innerHTML = `<div class="empty" style="grid-column:1/-1;">${ERR_HTML}</div>`;
+      });
+      return;
+    }
+    const sitreps = json.data;
+    const badge   = document.getElementById("sitrepBadge");
+    if (badge) badge.textContent = sitreps.length ? `${sitreps.length} laporan tersedia` : "Belum ada laporan";
+
+    const mkCard = sr => `
+      <div class="sc ${riskCardClass(sr.risk_level)}" onclick="openSitrepModal(${sr.earthquake_id})">
+        <div class="sc-head">
+          <span class="risk-badge ${riskClass(sr.risk_level)}"><i class="fas fa-shield-alt"></i> ${sr.risk_level}</span>
+          <span class="gen-badge ${sr.generated_by==="llm"?"gen-llm":"gen-fallback"}">
+            ${sr.generated_by==="llm"?'<i class="fas fa-brain"></i> LLM':'<i class="fas fa-cog"></i> Auto'}
+          </span>
+        </div>
+        <div class="sc-mag" style="color:${riskBarColor(sr.risk_level)};">M ${sr.magnitude}</div>
+        <div class="sc-loc">${trunc(sr.location_desc,55)}</div>
+        <div class="sc-sum">${sr.summary}</div>
+        <div class="sc-foot">
+          <span style="font-size:.66rem;color:var(--muted);"><i class="fas fa-clock"></i> ${fmtTime(sr.created_at)}</span>
+          <span style="font-size:.69rem;color:var(--blue);font-weight:600;">Detail →</span>
+        </div>
+      </div>`;
+
+    const emptyHtml = `<div class="empty" style="grid-column:1/-1;">
+      <i class="fas fa-file-medical-alt" style="color:var(--violet);"></i>
+      <p>Belum ada Situation Report. Klik "Fetch BMKG" lalu jalankan pipeline gempa M≥5.</p>
+    </div>`;
+
+    const g  = document.getElementById("sitrepGrid");
+    const g2 = document.getElementById("sitrepGridHome");
+    if (g)  g.innerHTML  = sitreps.length ? sitreps.map(mkCard).join("") : emptyHtml;
+    if (g2) g2.innerHTML = sitreps.length ? sitreps.slice(0,4).map(mkCard).join("") : emptyHtml;
+  } catch(e) {
+    console.error("loadSitreps error:", e);
+    [document.getElementById("sitrepGrid"), document.getElementById("sitrepGridHome")].forEach(g => {
+      if (g) g.innerHTML = `<div class="empty" style="grid-column:1/-1;">${ERR_HTML}</div>`;
+    });
+  }
+}
+
+async function openSitrepModal(eqId) {
+  try {
+    const [srRes, intelRes] = await Promise.all([
+      fetch(`/api/situation-reports/${eqId}`),
+      fetch(`/api/intelligence/${eqId}`)
+    ]);
+    const srJson    = await srRes.json();
+    const intelJson = await intelRes.json();
+    if (srJson.status !== "success") { showToast("Sitrep tidak ditemukan", "critical"); return; }
+    const sr    = srJson.data;
+    const intel = intelJson.data || [];
+    const risk  = sr.risk_level || "MEDIUM";
+
+    document.getElementById("modalRiskBar").style.background    = riskBarColor(risk);
+    document.getElementById("modalRiskBadge").className         = "risk-badge " + riskClass(risk);
+    document.getElementById("modalRiskBadge").innerHTML         = `<i class="fas fa-shield-alt"></i> ${risk}`;
+    document.getElementById("modalGenBadge").className          = "gen-badge " + (sr.generated_by==="llm"?"gen-llm":"gen-fallback");
+    document.getElementById("modalGenBadge").innerHTML          = sr.generated_by==="llm" ? '<i class="fas fa-brain"></i> LLM' : '<i class="fas fa-cog"></i> Fallback';
+    document.getElementById("modalTitle").textContent           = `M${sr.magnitude} — ${sr.location_desc}`;
+    document.getElementById("modalSubtitle").textContent        = fmtTime(sr.eq_timestamp || sr.created_at);
+    document.getElementById("modalSummary").textContent         = sr.summary || "—";
+    document.getElementById("modalAffected").textContent        = sr.affected_areas || "—";
+    document.getElementById("modalRiskJust").textContent        = sr.risk_justification || "—";
+
+    const recs = Array.isArray(sr.recommendations) ? sr.recommendations : [];
+    document.getElementById("modalRecs").innerHTML = recs.length
+      ? recs.map((r,i) => `<li><div class="rec-n">${i+1}</div><div>${r}</div></li>`).join("")
+      : '<li style="color:var(--muted);">Tidak ada rekomendasi</li>';
+
+    document.getElementById("modalIntel").innerHTML = intel.length
+      ? intel.map(r => `
+          <div class="d-flex align-items-start gap-2 mb-2 p-2" style="border-radius:8px;background:#F8FAFC;">
+            <span class="cred-chip ${credClass(r.credibility_status)}">${r.credibility_status}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:500;">${trunc(r.title,80)}</div>
+              <div style="font-size:.68rem;color:var(--muted);">${r.source_name} · ${fmtTime(r.published_at)}</div>
+              ${r.llm_reasoning?`<div style="font-size:.71rem;color:var(--text-2);margin-top:2px;font-style:italic;">"${r.llm_reasoning}"</div>`:""}
+            </div>
+          </div>`).join("")
+      : '<p style="color:var(--muted);font-size:.82rem;">Tidak ada sumber berita terkait.</p>';
+
+    const notes = sr.notes;
+    document.getElementById("modalNotesWrap").style.display = (notes && notes.trim()) ? "" : "none";
+    if (notes && notes.trim()) document.getElementById("modalNotes").textContent = notes;
+    new bootstrap.Modal(document.getElementById("sitrepModal")).show();
+  } catch(e) { console.error(e); showToast("Gagal memuat detail sitrep", "critical"); }
+}
+
+/* ── Intelligence ── */
+async function loadIntel() {
+  try {
+    const res   = await fetch("/api/intelligence?limit=30");
+    const json  = await res.json();
+    const tbody = document.getElementById("intelTable");
+    if (json.status !== "success") { if(tbody) tbody.innerHTML=`<tr><td colspan="5">${ERR_HTML}</td></tr>`; return; }
+    const data  = json.data;
+    const badge = document.getElementById("intelBadge");
+    if (badge) badge.textContent = data.length + " artikel dikumpulkan";
+    if (!data.length) { tbody.innerHTML=`<tr><td colspan="5" class="empty"><i class="fas fa-newspaper"></i><p>Belum ada laporan.</p></td></tr>`; return; }
+    tbody.innerHTML = data.map(r => `<tr>
+      <td><span style="font-weight:600;font-size:.8rem;">${r.source_name||"—"}</span></td>
+      <td>
+        <div style="font-weight:500;line-height:1.3;">${trunc(r.title,70)}</div>
+        ${r.source_url?`<a href="${r.source_url}" target="_blank" style="font-size:.66rem;color:var(--blue);">Buka ↗</a>`:""}
+      </td>
+      <td><span class="cred-chip ${credClass(r.credibility_status)}">${r.credibility_status}</span></td>
+      <td style="max-width:200px;color:var(--text-2);font-size:.77rem;">${trunc(r.llm_reasoning,100)}</td>
+      <td style="white-space:nowrap;color:var(--muted);font-size:.72rem;">${fmtTime(r.created_at)}</td>
+    </tr>`).join("");
+  } catch(e) {
+    const tbody = document.getElementById("intelTable");
+    if(tbody) tbody.innerHTML=`<tr><td colspan="5">${ERR_HTML}</td></tr>`;
+  }
+}
+
+/* ── EQ Table ── */
+let allEqs = [];
+
+function filterTable() {
+  const q = (document.getElementById("eqSearchInput")?.value || "").toLowerCase();
+  const filtered = q ? allEqs.filter(eq =>
+    (eq.location_desc||"").toLowerCase().includes(q) || String(eq.magnitude).includes(q)
+  ) : allEqs;
+  renderDashboardTable(filtered);
+}
+
+function renderDashboardTable(eqs) {
+  const tbody = document.getElementById("eqTable");
+  const sub   = document.getElementById("tableCountSub");
+  if (sub) sub.textContent = `${eqs.length} kejadian ditemukan`;
+  if (!eqs.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty"><i class="fas fa-database"></i><p>Tidak ada data.</p></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = eqs.map((eq, idx) => `
+    <tr id="row-${eq.id}">
+      <td class="row-num">${idx+1}</td>
+      <td>
+        <div class="loc-name">${trunc(eq.location_desc,50)}</div>
+        <div class="loc-coord">${eq.latitude?.toFixed(2)||"—"}°, ${eq.longitude?.toFixed(2)||"—"}°</div>
+      </td>
+      <td><span class="mag-chip ${magChipClass(eq.magnitude)}">M ${eq.magnitude}</span></td>
+      <td style="white-space:nowrap;color:var(--text-2);font-size:.78rem;">${fmtTime(eq.timestamp)}</td>
+      <td><span class="status-chip ${eq.status==="NEW"?"status-new":"status-ack"}">${eq.status==="NEW"?'<i class="fas fa-circle" style="font-size:.45rem;"></i> NEW':'<i class="fas fa-check" style="font-size:.58rem;"></i> ACK'}</span></td>
+      <td style="color:var(--muted);font-size:.78rem;">${eq.pipeline_status==="DONE"?'<i class="fas fa-file-alt" style="color:var(--blue);"></i> 1':"—"}</td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap;">
+        ${eq.status==="NEW"?`<button class="btn-ack" id="ack-${eq.id}" onclick="acknowledge(${eq.id})"><i class="fas fa-check"></i> Akui</button>`:""}
+        ${(eq.pipeline_status==="PENDING"||eq.pipeline_status==="FAILED")?`<button class="btn-pipe" id="pipe-${eq.id}" onclick="triggerPipeline(${eq.id})"><i class="fas fa-brain"></i> Analisis</button>`:""}
+      </div></td>
+    </tr>`).join("");
+}
+
+function updateTable(eqs) {
+  const cnt = document.getElementById("tableCount");
+  if (cnt) cnt.textContent = `${eqs.length} kejadian gempa tercatat`;
+  allEqs = eqs;
+  filterTable();
+
+  // Arsip tab (full columns)
+  const tbodyArsip = document.getElementById("eqTableArsip");
+  if (!tbodyArsip) return;
+  if (!eqs.length) { tbodyArsip.innerHTML=`<tr><td colspan="8" class="empty"><i class="fas fa-database"></i><p>Tidak ada data.</p></td></tr>`; return; }
+  tbodyArsip.innerHTML = eqs.map(eq => {
+    const tsuClass = isTsunami(eq.tsunami_potential) ? "tsunami-yes" : "tsunami-no";
+    return `<tr id="row-arsip-${eq.id}">
+      <td><span class="mag-chip ${magChipClass(eq.magnitude)}">M ${eq.magnitude}</span></td>
+      <td><div class="loc-name">${trunc(eq.location_desc,45)}</div><div class="loc-coord">${eq.latitude?.toFixed(2)||"—"}°, ${eq.longitude?.toFixed(2)||"—"}°</div></td>
+      <td>${eq.depth_km ? eq.depth_km+" km" : "—"}</td>
+      <td style="white-space:nowrap;color:var(--text-2);">${fmtTime(eq.timestamp)}</td>
+      <td class="${tsuClass}">${isTsunami(eq.tsunami_potential)?"⚠ Ya":"Tidak"}</td>
+      <td><span class="status-chip ${eq.status==="NEW"?"status-new":"status-ack"}">${eq.status==="NEW"?'<i class="fas fa-circle" style="font-size:.45rem;"></i> NEW':'<i class="fas fa-check" style="font-size:.58rem;"></i> ACK'}</span></td>
+      <td><span class="pipe-chip ${pipeClass(eq.pipeline_status)}">${eq.pipeline_status||"—"}</span></td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap;">
+        ${eq.status==="NEW"?`<button class="btn-ack" id="ack2-${eq.id}" onclick="acknowledge(${eq.id})"><i class="fas fa-check"></i> Akui</button>`:""}
+        ${(eq.pipeline_status==="PENDING"||eq.pipeline_status==="FAILED")?`<button class="btn-pipe" id="pipe2-${eq.id}" onclick="triggerPipeline(${eq.id})"><i class="fas fa-brain"></i> Analisis</button>`:""}
+      </div></td>
+    </tr>`;
+  }).join("");
+}
+
+/* ── Stats ── */
+function updateStats(data) {
+  document.getElementById("sTotal").textContent   = data.total ?? "—";
+  document.getElementById("sHighMag").textContent = data.high_magnitude ?? "—";
+  document.getElementById("sNew").textContent     = data.new_alerts ?? "—";
+  document.getElementById("sSitrep").textContent  = data.sitrep_count ?? "—";
+  const sub = document.getElementById("sSubTotal");
+  if (sub) sub.textContent = data.latest ? `Terbaru: M${data.latest.magnitude}` : "Semua catatan";
+  const ag = data.agent || {};
+  const stEl = document.getElementById("sAgentStatus");
+  stEl.textContent = ag.is_running ? "AKTIF" : "MATI";
+  stEl.style.color = ag.is_running ? "var(--green)" : "var(--red)";
+  const pi = document.getElementById("sPollInfo");
+  if (pi) pi.textContent = ag.last_cycle_time ? `Siklus: ${timeAgo(ag.last_cycle_time)}` : "Belum ada siklus";
+  const ss = document.getElementById("sSitrepSub");
+  if (ss) ss.textContent = ag.total_sitreps ? `${ag.total_sitreps_llm??0} LLM · ${ag.total_sitreps_fallback??0} Auto` : "LLM + Fallback";
+  const dot   = document.getElementById("orchDot");
+  const ostEl = document.getElementById("orchStatus");
+  const cyEl  = document.getElementById("orchCycle");
+  if (dot)   dot.className = "orch-dot " + (ag.is_running ? "on" : "off");
+  if (ostEl) { ostEl.textContent = ag.is_running ? "AKTIF" : "NONAKTIF"; ostEl.style.color = ag.is_running ? "var(--green)" : "var(--red)"; }
+  if (cyEl)  cyEl.textContent = ag.last_cycle_time ? timeAgo(ag.last_cycle_time) : "—";
+  const nd = document.getElementById("notifDot");
+  if (nd) nd.style.display = (data.new_alerts > 0) ? "" : "none";
+}
+
+/* ── Data Loading ── */
+let prevCount = 0;
+const ERR_HTML = `<div class="empty"><i class="fas fa-exclamation-circle" style="color:var(--red);font-size:1.2rem;"></i><p style="margin-top:.5rem;">Gagal memuat — pastikan server Flask berjalan.</p></div>`;
+
+async function loadData() {
+  try {
+    const [eqRes, stRes] = await Promise.all([fetch("/api/earthquakes"), fetch("/api/stats")]);
+    const eqJson = await eqRes.json();
+    const stJson = await stRes.json();
+    if (eqJson.status === "success") {
+      if (prevCount > 0 && eqJson.count > prevCount)
+        showToast(`${eqJson.count - prevCount} gempa baru terdeteksi!`, "critical");
+      prevCount = eqJson.count;
+      updateMaps(eqJson.data);
+      updateAlerts(eqJson.data);
+      updateRecentList(eqJson.data);
+      updateTable(eqJson.data);
+    }
+    if (stJson.status === "success") updateStats(stJson.data);
+  } catch(e) {
+    console.error("loadData error:", e);
+    const el1 = document.getElementById("recentList"); if(el1) el1.innerHTML = ERR_HTML;
+    const el3 = document.getElementById("eqTable"); if(el3) el3.innerHTML = `<tr><td colspan="7">${ERR_HTML}</td></tr>`;
+  }
+}
+async function loadAll() { await loadData(); await Promise.all([loadSitreps(), loadIntel()]); }
+
+/* ── Actions ── */
+async function acknowledge(id) {
+  const btn  = document.getElementById(`ack-${id}`);
+  const btn2 = document.getElementById(`ack2-${id}`);
+  if (btn)  { btn.disabled  = true; btn.innerHTML  = '<i class="fas fa-spinner spin"></i>'; }
+  if (btn2) { btn2.disabled = true; btn2.innerHTML = '<i class="fas fa-spinner spin"></i>'; }
+  try {
+    const res = await fetch(`/api/earthquakes/${id}/acknowledge`, { method: "POST" });
+    if (res.ok) {
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        row.cells[4].innerHTML = `<span class="status-chip status-ack"><i class="fas fa-check" style="font-size:.58rem;"></i> ACK</span>`;
+        row.cells[6].querySelector(".btn-ack")?.remove();
+        row.classList.add("row-new");
+      }
+      loadData();
+    } else {
+      if (btn)  { btn.disabled  = false; btn.innerHTML  = '<i class="fas fa-check"></i> Akui'; }
+      if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="fas fa-check"></i> Akui'; }
+    }
+  } catch {
+    if (btn)  { btn.disabled  = false; btn.innerHTML  = '<i class="fas fa-check"></i> Akui'; }
+    if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="fas fa-check"></i> Akui'; }
+  }
+}
+
+async function triggerPipeline(id) {
+  const btn = document.getElementById(`pipe-${id}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner spin"></i> Proses…'; }
+  showToast(`Menjalankan pipeline gempa #${id}…`, "info");
+  try {
+    const res  = await fetch(`/api/pipeline/${id}`, { method: "POST" });
+    const json = await res.json();
+    if (json.status === "success") {
+      showToast(`Pipeline selesai! Risk: ${json.data?.sitrep?.risk_level||"N/A"}`, "success");
+      await loadAll();
+    } else {
+      showToast("Pipeline gagal", "critical");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-brain"></i> Analisis'; }
+    }
+  } catch {
+    showToast("Error pipeline", "critical");
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-brain"></i> Analisis'; }
+  }
+}
+
+async function forcePoll() {
+  const btn = document.getElementById("forcePollBtn");
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner spin"></i>'; }
+  try {
+    const res  = await fetch("/api/agent/poll", { method: "POST" });
+    const json = await res.json();
+    if (json.status === "success") {
+      const d = json.data?.poll || {};
+      showToast(`Poll: ${d.fetched||0} fetched, ${d.new||0} baru`, "success");
+      await loadAll();
+    }
+  } catch { showToast("Gagal fetch BMKG", "critical"); }
+  finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i><span class="d-none d-sm-inline"> Fetch BMKG</span>'; }
+  }
+}
+
+/* ── Countdown ── */
+const REFRESH_SEC = 60;
+let countdown = REFRESH_SEC;
+setInterval(() => {
+  countdown--;
+  if (countdown <= 0) { countdown = REFRESH_SEC; loadAll(); }
+  const cn  = document.getElementById("countNum");  if (cn)  cn.textContent  = countdown;
+  const cn2 = document.getElementById("countNum2"); if (cn2) cn2.textContent = countdown;
+  const pb  = document.getElementById("progressBar");  if (pb)  pb.style.width  = `${(countdown/REFRESH_SEC)*100}%`;
+  const pb2 = document.getElementById("progressBar2"); if (pb2) pb2.style.width = `${(countdown/REFRESH_SEC)*100}%`;
+}, 1000);
+
+/* ── Approval Badge ── */
+async function updateApprovalBadge() {
+  try {
+    const res  = await fetch("/api/approval/stats");
+    const json = await res.json();
+    if (json.status === "success") {
+      const n       = json.data.total_pending || 0;
+      const link    = document.getElementById("approvalNavLink");
+      const badge   = document.getElementById("approvalNavBadge");
+      const bnBadge = document.getElementById("bnBadge");
+      if (n > 0) {
+        if (badge)   badge.textContent     = n;
+        if (link)    link.style.display    = "flex";
+        if (bnBadge) { bnBadge.textContent = n; bnBadge.style.display = "inline"; }
+      } else {
+        if (link)    link.style.display    = "none";
+        if (bnBadge) bnBadge.style.display = "none";
+      }
+    }
+  } catch(e) {}
+}
+
+/* ── Init ── */
+loadAll();
+updateApprovalBadge();
+setInterval(updateApprovalBadge, 30000);
+</script>
+</body>
+</html>

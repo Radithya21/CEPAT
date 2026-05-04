@@ -1,0 +1,69 @@
+"""
+config.py — Konfigurasi Sistem CEPAT
+Semua threshold, endpoint API, dan parameter sistem ada di sini.
+"""
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# ─────────────────────────────────────────────────────────────
+#  BMKG API
+# ─────────────────────────────────────────────────────────────
+BMKG_LATEST_URL  = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
+BMKG_RECENT_URL  = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json"
+BMKG_TIMEOUT_SEC = int(os.getenv("BMKG_TIMEOUT", 10))
+
+# ─────────────────────────────────────────────────────────────
+#  MONITORING AGENT
+# ─────────────────────────────────────────────────────────────
+POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL", 300))    # default: 5 menit
+MAGNITUDE_THRESHOLD   = float(os.getenv("MAGNITUDE_THRESHOLD", 5.0))
+
+# ─────────────────────────────────────────────────────────────
+#  GEMINI / GOOGLE  (Fase 2)
+# ─────────────────────────────────────────────────────────────
+GEMINI_API_KEY        = os.getenv("GEMINI_API_KEY", "")
+GEMINI_HOAX_MODEL     = os.getenv("GEMINI_HOAX_MODEL",     "gemini-2.0-flash")
+GEMINI_ANALYSIS_MODEL = os.getenv("GEMINI_ANALYSIS_MODEL", "gemini-2.0-flash")
+GEMINI_COMM_MODEL     = os.getenv("GEMINI_COMM_MODEL",     "gemini-2.0-flash")
+GEMINI_COORD_MODEL    = os.getenv("GEMINI_COORD_MODEL",    "gemini-2.0-flash")
+GEMINI_MAX_TOKENS     = int(os.getenv("GEMINI_MAX_TOKENS", 1500))
+
+# ─────────────────────────────────────────────────────────────
+#  INTELLIGENCE AGENT — RSS Feeds  (Fase 2)
+# ─────────────────────────────────────────────────────────────
+RSS_FEEDS = {
+    "ANTARA":  "https://www.antaranews.com/rss/terkini.xml",
+    "Detik":   "https://rss.detik.com/index.php/detikflash",
+    "Tribun":  "https://www.tribunnews.com/rss",
+    "GNews":   "https://news.google.com/rss/search?q=gempa+bumi+indonesia&hl=id&gl=ID&ceid=ID:id",
+}
+RSS_TIMEOUT_SEC  = int(os.getenv("RSS_TIMEOUT", 8))
+RSS_MAX_AGE_HOURS = int(os.getenv("RSS_MAX_AGE_HOURS", 24))  # artikel maks 24 jam lalu
+
+EARTHQUAKE_KEYWORDS = [
+    "gempa", "gempa bumi", "tsunami", "korban", "evakuasi",
+    "bpbd", "bmkg", "magnitudo", "skala richter", "bencana",
+    "aftershock", "gempa susulan", "seismik",
+]
+
+# ─────────────────────────────────────────────────────────────
+#  PIPELINE / ORCHESTRATOR  (Fase 2)
+# ─────────────────────────────────────────────────────────────
+PIPELINE_MIN_MAGNITUDE  = float(os.getenv("PIPELINE_MIN_MAGNITUDE", 5.0))
+PIPELINE_MAX_INTEL_PER_EQ = int(os.getenv("PIPELINE_MAX_INTEL", 10))  # maks artikel per gempa
+
+# ─────────────────────────────────────────────────────────────
+#  DATABASE
+# ─────────────────────────────────────────────────────────────
+DATABASE_PATH = os.getenv("DATABASE_PATH", "database/cepat.db")
+
+# ─────────────────────────────────────────────────────────────
+#  FLASK DASHBOARD
+# ─────────────────────────────────────────────────────────────
+FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "cepat-secret-key-ganti-di-produksi")
+FLASK_DEBUG      = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+FLASK_PORT       = int(os.getenv("FLASK_PORT", 5000))
+FLASK_HOST       = os.getenv("FLASK_HOST", "0.0.0.0")
