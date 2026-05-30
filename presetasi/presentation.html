@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEPAT — Presentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:   #0F2544;
+  --navy2:  #1A3A6B;
+  --orange: #E8701A;
+  --orange2:#F5944A;
+  --white:  #FFFFFF;
+  --off:    #F7F8FA;
+  --gray-lt:#E8EBF0;
+  --gray-md:#8A96A8;
+  --gray-dk:#2C3E55;
+  --slide-w: 1280px;
+  --slide-h: 720px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: #ffffff;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── Stage ────────────────────────────────────────────────────────────────── */
+.stage {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.deck {
+  position: relative;
+  width: var(--slide-w);
+  height: var(--slide-h);
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ── Slides ───────────────────────────────────────────────────────────────── */
+.slide {
+  position: absolute; inset: 0;
+  background: var(--white);
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(.4,0,.2,1),
+              transform 0.5s cubic-bezier(.4,0,.2,1);
+  transform: translateX(60px);
+}
+
+.slide.active {
+  opacity: 1; pointer-events: all; transform: translateX(0);
+  z-index: 2;
+}
+.slide.prev { transform: translateX(-60px); z-index: 1; }
+
+/* ── Nav ──────────────────────────────────────────────────────────────────── */
+.nav {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 16px;
+  z-index: 100;
+}
+
+.nav-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08);
+  color: #fff; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.nav-btn:hover { background: rgba(232,112,26,0.4); border-color: var(--orange); transform: scale(1.05); }
+.nav-btn:active { transform: scale(0.95); }
+
+.nav-dots { display: flex; gap: 8px; }
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.dot.active { background: var(--orange); transform: scale(1.4); }
+
+.slide-counter {
+  color: rgba(255,255,255,0.45);
+  font-size: 12px; font-weight: 500;
+  min-width: 32px; text-align: center;
+  letter-spacing: .05em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDE 1 — TITLE
+══════════════════════════════════════════════════════════════════════════════ */
+#s1 { background: var(--white); }
+
+.s1-left {
+  width: 44%;
+  background: var(--navy);
+  display: flex; flex-direction: column;
+  padding: 52px 48px;
+  position: relative;
+  overflow: hidden;
+}
+.s1-left::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 5px;
+  background: var(--orange);
+}
+
+.s1-logo-slot {
+  width: 110px; height: 110px; border-radius: 16px;
+  border: 2px dashed rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.35);
+  font-size: 11px; text-align: center; line-height: 1.5;
+  margin-bottom: auto;
+}
+
+.s1-presenter { margin-top: auto; }
+.s1-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.s1-role { font-size: 13px; color: rgba(170,204,255,0.8); margin-bottom: 3px; }
+.s1-inst { font-size: 12px; color: var(--gray-md); }
+
+/* Decorative circles */
+.s1-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(232,112,26,0.15);
+}
+
+.s1-right {
+  flex: 1;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  padding: 52px 56px 52px 60px;
+  position: relative;
+}
+
+.s1-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(232,112,26,0.1);
+  border: 1px solid rgba(232,112,26,0.3);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  color: var(--orange); text-transform: uppercase;
+  margin-bottom: 28px;
+  width: fit-content;
+}
+.s1-tag span { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); display: block; }
+
+.s1-title {
+  font-size: 100px; font-weight: 900; line-height: 1;
+  color: var(--navy);
+  letter-spacing: -4px;
+  margin-bottom: 8px;
+}
+.s1-title em {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-style: normal;
+}
+
+.s1-sub {
+  font-size: 17px; font-weight: 400; color: var(--gray-dk);
+  line-height: 1.5; margin-bottom: 40px;
+  max-width: 440px;
+}
+
+.s1-rule { width: 56px; height: 3px; background: var(--orange); border-radius: 2px; margin-bottom: 20px; }
+
+.s1-tagline {
+  font-size: 14px; color: var(--gray-md); font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDE 2 — PROBLEM
+══════════════════════════════════════════════════════════════════════════════ */
+#s2 .slide-header { padding: 44px 64px 0; }
+
+.slide-header h2 {
+  font-size: 40px; font-weight: 800; color: var(--navy);
+  margin-bottom: 6px;
+}
+.slide-header p {
+  font-size: 14px; color: var(--gray-md);
+}
+
+#s2 > div:first-child {
+  clip-path: polygon(0 0, 90% 0, 100% 100%, 0 100%);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+}
+
+#s2 .content {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 28px; padding: 28px 64px 0;
+  flex: 1;
+}
+
+.problem-list { display: flex; flex-direction: column; gap: 14px; }
+
+.p-card {
+  background: var(--off);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex; gap: 14px;
+  align-items: flex-start;
+  border-left: 3px solid var(--orange);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.p-card:hover { transform: translateX(4px); box-shadow: -3px 0 0 var(--orange); }
+
+.p-num {
+  font-size: 11px; font-weight: 700; color: var(--orange);
+  background: rgba(232,112,26,0.12);
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.p-card-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+.p-card-body  { font-size: 12px; color: var(--gray-md); line-height: 1.5; }
+
+.img-slot {
+  border-radius: 12px;
+  border: 2px dashed var(--gray-lt);
+  background: var(--off);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px;
+  color: var(--gray-md); font-size: 12px; text-align: center;
+  line-height: 1.6; padding: 20px;
+}
+.img-slot svg { opacity: 0.35; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDE 3 — METHODOLOGY
+══════════════════════════════════════════════════════════════════════════════ */
+#s3 {
+  flex-direction: column;
+  padding: 44px 56px 36px;
+}
+#s3 h2 {
+  font-size: 40px; font-weight: 800; color: var(--navy);
+  margin-bottom: 6px;
+}
+#s3 .s3-sub {
+  font-size: 13px; color: var(--gray-md); margin-bottom: 36px;
+}
+
+.pipeline {
+  display: flex; gap: 0; flex: 1; align-items: stretch;
+}
+
+.agent-card {
+  flex: 1;
+  border-radius: 12px;
+  display: flex; flex-direction: column;
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.agent-card:nth-child(odd)  { background: var(--navy); }
+.agent-card:nth-child(even) { background: var(--navy2); }
+
+.agent-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--orange);
+}
+
+.agent-num {
+  font-size: 11px; font-weight: 800; color: var(--orange);
+  letter-spacing: .1em; margin-bottom: 14px;
+}
+.agent-name {
+  font-size: 16px; font-weight: 700; color: var(--white);
+  line-height: 1.3; margin-bottom: 10px;
+}
+.agent-desc {
+  font-size: 11.5px; color: rgba(170,200,255,0.75);
+  line-height: 1.6; flex: 1;
+}
+
+.agent-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; flex-shrink: 0;
+  color: var(--orange); font-size: 18px; font-weight: 700;
+}
+
+/* Output row */
+.output-row {
+  display: flex; gap: 12px; margin-top: 20px;
+}
+.out-pill {
+  flex: 1;
+  background: var(--off);
+  border-radius: 8px;
+  padding: 10px 14px;
+  border-top: 2px solid var(--orange);
+}
+.out-pill-title { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+.out-pill-sub   { font-size: 10.5px; color: var(--gray-md); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDE 4 — RESULTS
+══════════════════════════════════════════════════════════════════════════════ */
+#s4 { flex-direction: column; padding: 44px 56px 36px; }
+#s4 h2 { font-size: 40px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+#s4 .s4-sub { font-size: 13px; color: var(--gray-md); margin-bottom: 28px; }
+
+.screenshots {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; margin-bottom: 24px;
+}
+.shot-slot {
+  border-radius: 12px;
+  border: 2px dashed var(--gray-lt);
+  background: var(--off);
+  aspect-ratio: 16/9;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px;
+  color: var(--gray-md); font-size: 12px; text-align: center;
+  padding: 16px; line-height: 1.5;
+  position: relative; overflow: hidden;
+}
+.shot-slot::before {
+  content: attr(data-label);
+  position: absolute; top: 10px; left: 12px;
+  font-size: 10px; font-weight: 700; color: var(--orange);
+  text-transform: uppercase; letter-spacing: .08em;
+}
+
+.result-bullets {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+}
+.r-bullet {
+  background: var(--off); border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12px; color: var(--gray-dk); line-height: 1.5;
+  border-left: 3px solid var(--orange);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDE 5 — DISCUSSION
+══════════════════════════════════════════════════════════════════════════════ */
+#s5 { flex-direction: column; padding: 44px 56px 36px; }
+#s5 h2 { font-size: 40px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+#s5 .s5-sub { font-size: 13px; color: var(--gray-md); margin-bottom: 28px; }
+
+#s5 > div:nth-child(3) {
+  clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+  background: linear-gradient(225deg, var(--navy) 0%, var(--navy2) 100%);
+}
+
+#s5 .content { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+
+.impact-cards { display: flex; flex-direction: column; gap: 16px; }
+.impact-card {
+  background: var(--off); border-radius: 12px;
+  padding: 22px 24px;
+  border-top: 3px solid var(--orange);
+  flex: 1;
+}
+.impact-card h3 {
+  font-size: 16px; font-weight: 700; color: var(--navy);
+  margin-bottom: 8px;
+}
+.impact-card p { font-size: 13px; color: var(--gray-dk); line-height: 1.6; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SLIDE 6 — CONCLUSION
+══════════════════════════════════════════════════════════════════════════════ */
+#s6 { background: var(--white); }
+
+.s6-left {
+  width: 36%;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  display: flex; flex-direction: column;
+  justify-content: center;
+  padding: 56px 48px;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+}
+.s6-left::after {
+  content: '';
+  position: absolute; top: 0; left: 0; bottom: 0; width: 5px;
+  background: var(--orange);
+}
+
+/* Decorative element */
+.s6-deco {
+  position: absolute; bottom: -60px; right: -60px;
+  width: 220px; height: 220px; border-radius: 50%;
+  border: 40px solid rgba(232,112,26,0.08);
+}
+
+.s6-word {
+  font-size: 72px; font-weight: 900; color: var(--orange);
+  letter-spacing: -3px; line-height: 1; margin-bottom: 8px;
+}
+.s6-fullname {
+  font-size: 14px; color: rgba(170,204,255,0.7); line-height: 1.6; margin-bottom: 36px;
+}
+.s6-rule { width: 40px; height: 3px; background: var(--orange); border-radius: 2px; margin-bottom: 20px; }
+.s6-thanks { font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+.s6-contact { font-size: 12px; color: var(--gray-md); }
+
+.s6-right {
+  flex: 1;
+  padding: 48px 52px;
+  display: flex; flex-direction: column;
+}
+.s6-right h3 {
+  font-size: 24px; font-weight: 800; color: var(--navy);
+  margin-bottom: 24px; letter-spacing: -.5px;
+}
+
+.takeaways { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+
+.takeaway {
+  display: flex; gap: 16px; align-items: flex-start;
+  padding: 14px 18px;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+.takeaway:nth-child(odd) { background: var(--off); }
+.takeaway:hover { background: rgba(232,112,26,0.07); }
+
+.tk-num {
+  font-size: 11px; font-weight: 800; color: var(--orange);
+  background: rgba(232,112,26,0.12);
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.tk-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+.tk-body  { font-size: 12px; color: var(--gray-md); line-height: 1.5; }
+
+/* ── Timecode badge ───────────────────────────────────────────────────────── */
+.timecode {
+  position: absolute; bottom: 18px; right: 22px;
+  font-size: 10px; color: var(--gray-md);
+  background: var(--off); border-radius: 6px;
+  padding: 3px 9px; font-weight: 500; letter-spacing: .04em;
+  border: 1px solid var(--gray-lt);
+}
+
+/* ── Script strip (orange bottom) ────────────────────────────────────────── */
+.script-strip {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--navy); padding: 10px 24px 10px;
+  font-size: 11px; color: rgba(170,200,255,0.8);
+  line-height: 1.5; font-style: italic;
+  display: none;
+}
+.script-strip::before {
+  content: '▶ Script: ';
+  color: var(--orange); font-style: normal; font-weight: 600;
+}
+
+body.show-script .script-strip { display: block; }
+body.show-script .deck { height: calc(var(--slide-h) - 56px); }
+
+/* ── Script toggle btn ────────────────────────────────────────────────────── */
+.script-toggle {
+  position: fixed; top: 20px; right: 20px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.6);
+  border-radius: 8px; padding: 6px 14px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.script-toggle:hover { background: rgba(232,112,26,0.3); color: #fff; border-color: var(--orange); }
+
+/* ── Fullscreen hint ──────────────────────────────────────────────────────── */
+.hint {
+  position: fixed; top: 20px; left: 20px;
+  font-size: 10px; color: rgba(255,255,255,0.3);
+  letter-spacing: .06em;
+}
+
+/* ── Responsive scale ─────────────────────────────────────────────────────── */
+.scale-wrapper {
+  width: var(--slide-w);
+  height: var(--slide-h);
+  transform-origin: center center;
+}
+
+/* ── Modern organic design improvements ────────────────────────────────────── */
+
+/* Logo treatment */
+img[alt="CEPAT Logo"] {
+  border-radius: 50% !important;
+  box-shadow: 0 0 0 6px rgba(255,255,255,0.35), 0 0 0 10px rgba(232,112,26,0.12);
+}
+
+/* Organic panel dividers */
+.s1-left {
+  clip-path: polygon(0 0, 85% 0, 100% 100%, 0 100%);
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+}
+
+.s6-left {
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+}
+
+/* Team avatars */
+.team-avatars {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(232, 112, 26, 0.15), rgba(232, 112, 26, 0.05));
+  border: 2px solid rgba(232, 112, 26, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(170, 204, 255, 0.9);
+  transition: all 0.3s;
+}
+
+.avatar:hover {
+  border-color: var(--orange);
+  box-shadow: 0 4px 16px rgba(232, 112, 26, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Softer cards with organic feel */
+.p-card {
+  border-radius: 16px !important;
+  border-left: none !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--off) 0%, rgba(247, 248, 250, 0.5) 100%);
+}
+
+.p-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--orange);
+  border-radius: 4px 0 0 4px;
+}
+
+.p-card:hover {
+  transform: translateX(6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.p-num {
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 12px !important;
+  flex-shrink: 0;
+}
+
+/* Agent cards with softer design */
+.agent-card {
+  border-radius: 20px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s;
+  position: relative;
+  border: 1px solid rgba(232, 112, 26, 0.1);
+}
+
+.agent-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(232, 112, 26, 0.2);
+}
+
+.agent-card::before {
+  height: 4px !important;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Result bullets as soft pills */
+.r-bullet {
+  border-radius: 20px !important;
+  border-left: 3px solid var(--orange) !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.r-bullet:hover {
+  box-shadow: 0 4px 16px rgba(232, 112, 26, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Impact cards */
+.impact-card {
+  border-radius: 16px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border-top: 4px solid var(--orange) !important;
+  transition: all 0.3s;
+}
+
+.impact-card:hover {
+  box-shadow: 0 8px 24px rgba(232, 112, 26, 0.15);
+  transform: translateY(-4px);
+}
+
+/* Takeaways softer */
+.takeaway {
+  border-radius: 14px !important;
+  transition: all 0.3s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.takeaway:hover {
+  box-shadow: 0 6px 16px rgba(232, 112, 26, 0.1);
+  transform: translateX(4px);
+}
+
+.tk-num {
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 11px !important;
+}
+
+/* Screenshot slots with rounded corners */
+.shot-slot {
+  border-radius: 18px !important;
+  box-shadow: inset 0 0 0 2px var(--gray-lt);
+  transition: all 0.3s;
+}
+
+.shot-slot:hover {
+  box-shadow: inset 0 0 0 2px var(--orange), 0 6px 20px rgba(232, 112, 26, 0.15);
+}
+
+/* SVG arrow styling */
+.agent-arrow {
+  background: linear-gradient(135deg, rgba(232, 112, 26, 0.1), transparent);
+  border-radius: 50%;
+  font-weight: 900;
+  font-size: 20px;
+  transition: all 0.3s;
+}
+
+.agent-arrow:hover {
+  color: var(--orange);
+  transform: scaleX(1.2);
+}
+
+/* Output pills softer */
+.out-pill {
+  border-radius: 14px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  border-top: 3px solid var(--orange) !important;
+}
+
+.out-pill:hover {
+  box-shadow: 0 4px 16px rgba(232, 112, 26, 0.1);
+}
+
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="scale-wrapper" id="scaleWrap">
+    <div class="deck" id="deck">
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SLIDE 1 — INTRODUCTION  0:00–0:20
+      ═══════════════════════════════════════════════════════════════════ -->
+      <div class="slide active" id="s1">
+        <div class="s1-left">
+          <!-- Decorative circles -->
+          <div class="s1-circle" style="width:300px;height:300px;top:-80px;right:-100px;"></div>
+          <div class="s1-circle" style="width:180px;height:180px;bottom:60px;right:-40px;"></div>
+
+          <div class="s1-logo-slot" style="border:none;background:transparent;padding:0;">
+              <img src="presetasi/logo.jpg" alt="CEPAT Logo"
+                style="width:110px;height:110px;object-fit:cover;border-radius:50%;">
+          </div>
+
+          <div class="s1-presenter">
+            <div class="team-avatars">
+              <div class="avatar" title="Dimas">D</div>
+              <div class="avatar" title="Zakky">Z</div>
+              <div class="avatar" title="Trilen">T</div>
+            </div>
+            <div class="s1-role">Project Team</div>
+            <div class="s1-inst">Universitas Andalas</div>
+          </div>
+        </div>
+
+        <div class="s1-right">
+          <div class="s1-tag"><span></span>Multi-Agent System</div>
+          <div class="s1-title">CEP<em>AT</em></div>
+          <div class="s1-sub">Collaborative Emergency Planning and Action Tool</div>
+          <div class="s1-rule"></div>
+          <div class="s1-tagline">Faster, Structured Earthquake Response</div>
+        </div>
+
+        <div class="timecode">0:00 – 0:20</div>
+        <div class="script-strip">Hello, we are Dimas, Zakky, and Trilen from Universitas Andalas. Today we present CEPAT — a multi-agent system designed to help BPBD respond to earthquakes faster, with clear workflows, reliable data, and human approval at every step.</div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SLIDE 2 — PROBLEM STATEMENT  0:20–0:55
+      ══════════════════════════════════════════════════════════════════════ -->
+      <div class="slide" id="s2" style="flex-direction:row;">
+
+        <!-- Left: image panel -->
+        <div style="width:46%;background:var(--navy);display:flex;align-items:center;justify-content:center;padding:36px;position:relative;flex-shrink:0;">
+          <!-- subtle decorative circle -->
+          <div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;border:36px solid rgba(232,112,26,0.07);"></div>
+          <div style="width:100%;height:100%;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;padding:10px;">
+            <img src="problem.png" alt="Problem Statement"
+                 style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">
+          </div>
+        </div>
+
+        <!-- Right: content -->
+        <div style="flex:1;display:flex;flex-direction:column;padding:44px 52px 44px 44px;">
+          <!-- Orange accent bar top -->
+          <div style="width:40px;height:4px;background:var(--orange);border-radius:2px;margin-bottom:16px;"></div>
+          <h2 style="font-size:34px;font-weight:800;color:var(--navy);margin-bottom:4px;">Problem Statement</h2>
+          <p style="font-size:13px;color:var(--gray-md);margin-bottom:24px;">Current disaster-response workflows create dangerous gaps</p>
+
+          <div class="problem-list" style="flex:1;">
+            <div class="p-card">
+              <div class="p-num">1</div>
+              <div><div class="p-card-title">Manual Data Gathering</div><div class="p-card-body">Staff manually collect BMKG updates and search for news under extreme time pressure.</div></div>
+            </div>
+            <div class="p-card">
+              <div class="p-num">2</div>
+              <div><div class="p-card-title">Slow Alert Drafting</div><div class="p-card-body">Reports and alerts are written by hand, causing delays and inconsistent messaging.</div></div>
+            </div>
+            <div class="p-card">
+              <div class="p-num">3</div>
+              <div><div class="p-card-title">Fragmented Coordination</div><div class="p-card-body">Resource decisions are scattered with no single centralized source of truth.</div></div>
+            </div>
+            <div class="p-card">
+              <div class="p-num">4</div>
+              <div><div class="p-card-title">No Audit Trail</div><div class="p-card-body">Decisions are hard to review or justify — limited traceability and accountability.</div></div>
+            </div>
+            <div class="p-card">
+              <div class="p-num">5</div>
+              <div><div class="p-card-title">Misinformation Risk</div><div class="p-card-body">Unverified reports spread fast, making it harder to act on credible information.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timecode">0:20 – 0:55</div>
+        <div class="script-strip">After a major earthquake, responders need rapid, consistent decisions. But current workflows are often manual: staff gather official updates, search news, draft alerts, and coordinate resources under time pressure. This creates delays, inconsistent messaging, and limited traceability. Misinformation can spread quickly. CEPAT addresses these issues by automating early analysis while keeping humans firmly in control.</div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SLIDE 3 — METHODOLOGY  0:55–2:00
+      ═══════════════════════════════════════════════════════════════════ -->
+      <div class="slide" id="s3">
+        <h2 style="position:absolute;top:44px;left:56px;font-size:40px;font-weight:800;color:var(--navy);">Methodology</h2>
+        <p class="s3-sub" style="position:absolute;top:96px;left:56px;font-size:13px;color:var(--gray-md);">Python · Flask · SQLite · Five coordinated agents that mirror real response stages</p>
+
+        <div class="pipeline" style="position:absolute;top:140px;left:56px;right:56px;bottom:130px;">
+          <div class="agent-card">
+            <div class="agent-num">01</div>
+            <div class="agent-name">Monitoring<br>Agent</div>
+            <div class="agent-desc">Continuously polls the official BMKG feed and stores verified earthquake events in the local database.</div>
+          </div>
+          <div class="agent-arrow">›</div>
+          <div class="agent-card">
+            <div class="agent-num">02</div>
+            <div class="agent-name">Intelligence<br>Agent</div>
+            <div class="agent-desc">Collects related news from RSS sources and classifies each article: Valid, Hoax, or Unverified.</div>
+          </div>
+          <div class="agent-arrow">›</div>
+          <div class="agent-card">
+            <div class="agent-num">03</div>
+            <div class="agent-name">Analysis<br>Agent</div>
+            <div class="agent-desc">Generates a structured situation report and assigns a risk level based on all available data.</div>
+          </div>
+          <div class="agent-arrow">›</div>
+          <div class="agent-card">
+            <div class="agent-num">04</div>
+            <div class="agent-name">Communication<br>Agent</div>
+            <div class="agent-desc">Drafts alerts in multiple formats — public-facing messages and technical reports for responders.</div>
+          </div>
+          <div class="agent-arrow">›</div>
+          <div class="agent-card">
+            <div class="agent-num">05</div>
+            <div class="agent-name">Coordination<br>Agent</div>
+            <div class="agent-desc">Proposes prioritized resource needs and a concrete action plan based on the situation report.</div>
+          </div>
+        </div>
+
+        <div class="output-row" style="position:absolute;bottom:40px;left:56px;right:56px;">
+          <div class="out-pill">
+            <div class="out-pill-title">Flask Dashboard</div>
+            <div class="out-pill-sub">Centralized output view</div>
+          </div>
+          <div class="out-pill">
+            <div class="out-pill-title">Approval Queue</div>
+            <div class="out-pill-sub">Human review gate</div>
+          </div>
+          <div class="out-pill">
+            <div class="out-pill-title">Audit Log</div>
+            <div class="out-pill-sub">Full decision trail</div>
+          </div>
+          <div class="out-pill">
+            <div class="out-pill-title">SQLite Database</div>
+            <div class="out-pill-sub">Local — no cloud dependency</div>
+          </div>
+        </div>
+
+        <div class="timecode">0:55 – 2:00</div>
+        <div class="script-strip">CEPAT is built in Python with a lightweight, modular architecture. Five coordinated agents reflect real response stages: (1) Monitoring polls BMKG; (2) Intelligence classifies news credibility; (3) Analysis generates a sitrep and risk level; (4) Communication drafts multi-format alerts; (5) Coordination proposes prioritized actions. All outputs appear in a Flask dashboard with an approval queue and audit log.</div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SLIDE 4 — RESULTS  2:00–2:40
+      ═══════════════════════════════════════════════════════════════════ -->
+      <div class="slide" id="s4">
+        <h2 style="position:absolute;top:44px;left:56px;font-size:40px;font-weight:800;color:var(--navy);">Results</h2>
+        <p class="s4-sub" style="position:absolute;top:96px;left:56px;font-size:13px;color:var(--gray-md);">Historical earthquake demo — complete pipeline in one automated flow</p>
+
+        <div class="screenshots" style="position:absolute;top:140px;left:56px;right:56px;bottom:220px;">
+          <div class="shot-slot" data-label="01 · Dashboard" style="padding:0;overflow:hidden;">
+            <img src="dashboard.png" alt="Dashboard"
+                 style="width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+          <div class="shot-slot" data-label="02 · Earthquake Events" style="padding:0;overflow:hidden;">
+            <img src="Earthquake Events Page.png" alt="Earthquake Events"
+                 style="width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+          <div class="shot-slot" data-label="03 · Approval Queue" style="padding:0;overflow:hidden;">
+            <img src="Approval Queue Page .png" alt="Approval Queue"
+                 style="width:100%;height:100%;object-fit:cover;object-position:top;">
+          </div>
+        </div>
+
+        <div class="result-bullets" style="position:absolute;bottom:44px;left:56px;right:56px;">
+          <div class="r-bullet">Automatically ingests official BMKG data</div>
+          <div class="r-bullet">Gathers &amp; classifies news by credibility</div>
+          <div class="r-bullet">Produces structured sitrep with risk level</div>
+          <div class="r-bullet">Drafts multi-format alerts for human approval</div>
+          <div class="r-bullet">Generates prioritized coordination plan</div>
+        </div>
+
+        <div class="timecode">2:00 – 2:40</div>
+        <div class="script-strip">In a historical earthquake demo scenario, CEPAT completes a full response pipeline in one automated flow. It ingests official data, gathers related reports, produces a situation report, drafts alerts, and proposes a prioritized coordination plan — reducing manual steps and centralizing information.</div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SLIDE 5 — DISCUSSION  2:40–3:20
+      ═══════════════════════════════════════════════════════════════════ -->
+      <div class="slide" id="s5" style="flex-direction:row;">
+
+        <!-- Left: content -->
+        <div style="flex:1;display:flex;flex-direction:column;padding:44px 40px 44px 56px;">
+          <div style="width:40px;height:4px;background:var(--orange);border-radius:2px;margin-bottom:16px;"></div>
+          <h2 style="font-size:34px;font-weight:800;color:var(--navy);margin-bottom:4px;">Discussion</h2>
+          <p style="font-size:13px;color:var(--gray-md);margin-bottom:24px;">Impact and design rationale</p>
+
+          <div class="impact-cards" style="flex:1;">
+            <div class="impact-card">
+              <h3>⚡ Speed</h3>
+              <p>Automates data collection and first-pass analysis so responders can focus on decisions, not repetitive tasks.</p>
+            </div>
+            <div class="impact-card">
+              <h3>🔍 Transparency</h3>
+              <p>Every draft passes through a human approval queue. Every decision is recorded in an immutable audit log.</p>
+            </div>
+            <div class="impact-card">
+              <h3>🏗 Deployability</h3>
+              <p>Runs on standard local hardware with no cloud dependency — suitable for regional agencies with limited resources.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: image panel -->
+        <div style="width:48%;background:var(--navy);display:flex;align-items:center;justify-content:center;padding:36px;position:relative;flex-shrink:0;">
+          <div style="position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;border:36px solid rgba(232,112,26,0.07);"></div>
+          <div style="width:100%;height:100%;border-radius:14px;overflow:hidden;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;padding:10px;">
+            <img src="discuss.png" alt="Discussion"
+                 style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">
+          </div>
+        </div>
+
+        <div class="timecode">2:40 – 3:20</div>
+        <div class="script-strip">The main impact of CEPAT is speed with accountability. By automating data collection and first-pass analysis, responders can focus on decisions rather than repetitive tasks. Human approval and audit logging keep the system transparent and trustworthy. The architecture is lightweight and deployable on standard local infrastructure.</div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SLIDE 6 — CONCLUSION  3:20–3:50
+      ═══════════════════════════════════════════════════════════════════ -->
+      <div class="slide" id="s6">
+        <div class="s6-left">
+          <div class="s6-deco"></div>
+          <img src="logo.jpg" alt="CEPAT Logo"
+            style="width:80px;height:80px;object-fit:cover;border-radius:50%;margin-bottom:18px;">
+          <div class="s6-word">CEPAT</div>
+          <div class="s6-fullname">Collaborative Emergency<br>Planning and Action Tool</div>
+          <div class="s6-rule"></div>
+          <div class="s6-thanks">Our Team</div>
+          <div class="team-avatars" style="margin: 12px 0 16px 0;">
+            <div class="avatar" title="Dimas" style="width:40px;height:40px;font-size:14px;">D</div>
+            <div class="avatar" title="Zakky" style="width:40px;height:40px;font-size:14px;">Z</div>
+            <div class="avatar" title="Trilen" style="width:40px;height:40px;font-size:14px;">T</div>
+            <div class="avatar" title="Rafi" style="width:40px;height:40px;font-size:14px;">R</div>
+          </div>
+          <div class="s6-contact" style="font-size:10px;line-height:1.5;">Dimas · Zakky · Trilen · Rafi<br>Universitas Andalas</div>
+        </div>
+
+        <div class="s6-right">
+          <h3>Key Takeaways</h3>
+          <div class="takeaways">
+            <div class="takeaway">
+              <div class="tk-num">1</div>
+              <div><div class="tk-title">Faster Situational Awareness</div><div class="tk-body">BMKG data and classified news signals processed automatically in minutes.</div></div>
+            </div>
+            <div class="takeaway">
+              <div class="tk-num">2</div>
+              <div><div class="tk-title">Structured Coordination</div><div class="tk-body">A clear five-agent pipeline that mirrors real disaster response stages.</div></div>
+            </div>
+            <div class="takeaway">
+              <div class="tk-num">3</div>
+              <div><div class="tk-title">Reliable Communication</div><div class="tk-body">Multi-format alert drafts ready for human review and immediate release.</div></div>
+            </div>
+            <div class="takeaway">
+              <div class="tk-num">4</div>
+              <div><div class="tk-title">Human Oversight</div><div class="tk-body">Approval queue and audit log ensure trust and accountability at every step.</div></div>
+            </div>
+            <div class="takeaway">
+              <div class="tk-num">5</div>
+              <div><div class="tk-title">Anti-Misinformation</div><div class="tk-body">Automatic credibility classification helps prioritize verified information during crises.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timecode">3:20 – 3:50</div>
+        <div class="script-strip">To conclude, CEPAT delivers faster situational awareness, structured coordination, and reliable communication for earthquake response. It combines official data, news signals, and multi-agent analysis with strong human oversight. We believe CEPAT can strengthen local disaster response and reduce the impact of misinformation. Thank you for watching.</div>
+      </div>
+
+    </div><!-- /deck -->
+  </div><!-- /scale-wrapper -->
+</div><!-- /stage -->
+
+<!-- Controls -->
+<div class="nav">
+  <div class="nav-dots" id="dots"></div>
+  <div class="slide-counter" id="counter">1 / 6</div>
+</div>
+
+<button class="script-toggle" onclick="toggleScript()" title="Toggle script strip">Script</button>
+<div class="hint">← → navigate &nbsp;·&nbsp; F fullscreen &nbsp;·&nbsp; S script</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsEl  = document.getElementById('dots');
+const counter = document.getElementById('counter');
+let cur = 0;
+
+// Build dots
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('prev');
+  setTimeout(() => slides[cur].classList.remove('prev'), 500);
+  cur = Math.max(0, Math.min(n, slides.length - 1));
+  slides[cur].classList.add('active');
+  dotsEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === cur));
+  counter.textContent = `${cur + 1} / ${slides.length}`;
+}
+
+function go(dir) { goTo(cur + dir); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(-1); }
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 's' || e.key === 'S') toggleScript();
+  if (e.key === 'Home') goTo(0);
+  if (e.key === 'End')  goTo(slides.length - 1);
+});
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+function toggleScript() {
+  document.body.classList.toggle('show-script');
+}
+
+// Responsive scale to fit viewport
+function scaleSlides() {
+  const wrap = document.getElementById('scaleWrap');
+  const W = 1280, H = 720;
+  const scaleX = window.innerWidth / W;
+  const scaleY = window.innerHeight / H;
+  const scale  = Math.min(scaleX, scaleY);
+  wrap.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', scaleSlides);
+scaleSlides();
+</script>
+</body>
+</html>

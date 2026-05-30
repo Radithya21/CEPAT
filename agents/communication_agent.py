@@ -120,6 +120,7 @@ class CommunicationAgent:
                 "public_id":     str(result.get("public_id", ""))[:200],
                 "public_minang": str(result.get("public_minang", "")),
                 "technical":     str(result.get("technical", "")),
+                "english":       str(result.get("english", ""))[:200],
             }
         except json.JSONDecodeError as e:
             logger.warning(f"Gagal parse JSON dari Gemini: {e}")
@@ -159,7 +160,12 @@ class CommunicationAgent:
             f"Status: Monitoring aktif. Koordinasi segera diperlukan."
         )
 
-        return {"public_id": public_id, "public_minang": public_minang, "technical": technical}
+        # English public alert
+        risk_en = {"CRITICAL": "CRITICAL", "HIGH": "HIGH", "MEDIUM": "MODERATE", "LOW": "LOW"}.get(risk, risk)
+        english = f"EARTHQUAKE M{mag} {loc}. Risk: {risk_en}. Follow local authority instructions. Avoid damaged structures."
+        english = english[:200]
+
+        return {"public_id": public_id, "public_minang": public_minang, "technical": technical, "english": english}
 
     # ─────────────────────────────────────────────────────────
     #  Main Run
@@ -186,6 +192,7 @@ class CommunicationAgent:
             ("public_id",     drafts_data.get("public_id", "")),
             ("public_minang", drafts_data.get("public_minang", "")),
             ("technical",     drafts_data.get("technical", "")),
+            ("english",       drafts_data.get("english", "")),
         ]
 
         saved = []
@@ -204,7 +211,7 @@ class CommunicationAgent:
                 saved.append(draft)
                 logger.info(f"  Draf [{dtype}] tersimpan (ID={draft_id})")
 
-        logger.info(f"CommunicationAgent selesai: {len(saved)}/3 draf disimpan untuk gempa {earthquake_id}")
+        logger.info(f"CommunicationAgent selesai: {len(saved)}/4 draf disimpan untuk gempa {earthquake_id}")
         return saved
 
 

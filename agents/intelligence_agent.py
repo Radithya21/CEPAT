@@ -4,13 +4,14 @@ Scraping berita dari RSS feed, filter keyword gempa,
 dan klasifikasi kredibilitas artikel menggunakan Claude API.
 """
 
-import sys
-import os
-import re
+import asyncio
 import json
 import logging
+import os
+import re
+import sys
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 import feedparser
@@ -19,15 +20,27 @@ import requests
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import (
-    RSS_FEEDS, RSS_TIMEOUT_SEC, RSS_MAX_AGE_HOURS,
-    EARTHQUAKE_KEYWORDS, PIPELINE_MAX_INTEL_PER_EQ,
-    GEMINI_API_KEY, GEMINI_HOAX_MODEL, GEMINI_MAX_TOKENS,
+    EARTHQUAKE_KEYWORDS,
+    GEMINI_API_KEY,
+    GEMINI_HOAX_MODEL,
+    GEMINI_MAX_TOKENS,
+    PIPELINE_MAX_INTEL_PER_EQ,
+    RSS_FEEDS,
+    RSS_MAX_AGE_HOURS,
+    RSS_TIMEOUT_SEC,
+    TELEGRAM_API_HASH,
+    TELEGRAM_API_ID,
+    TELEGRAM_CHANNELS,
+    TELEGRAM_MAX_MSGS,
+    TELEGRAM_SESSION_DIR,
 )
 from database.db_handler import DatabaseHandler
 
 logger = logging.getLogger("IntelligenceAgent")
 
-PROMPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "prompts")
+PROMPTS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "prompts"
+)
 
 
 def _load_prompt(filename: str) -> str:
@@ -53,12 +66,17 @@ class IntelligenceAgent:
         if GEMINI_API_KEY:
             try:
                 from google import genai
+
                 self._model = genai.Client(api_key=GEMINI_API_KEY)
                 logger.info("Gemini client (hoax filter) diinisialisasi.")
             except ImportError:
-                logger.warning("Package 'google-genai' tidak ditemukan. Jalankan: pip install google-genai")
+                logger.warning(
+                    "Package 'google-genai' tidak ditemukan. Jalankan: pip install google-genai"
+                )
         else:
-            logger.warning("GEMINI_API_KEY tidak diset — hoax filter akan skip klasifikasi LLM.")
+            logger.warning(
+                "GEMINI_API_KEY tidak diset — hoax filter akan skip klasifikasi LLM."
+            )
 
     # ─────────────────────────────────────────────────────────
     #  RSS Fetching
@@ -68,9 +86,11 @@ class IntelligenceAgent:
         """Fetch dan parse satu RSS feed. Return list artikel mentah."""
         try:
             # feedparser.parse bisa lambat, beri timeout via requests
-            resp = requests.get(url, timeout=RSS_TIMEOUT_SEC, headers={
-                "User-Agent": "CEPAT-EmergencyMonitor/1.0"
-            })
+            resp = requests.get(
+                url,
+                timeout=RSS_TIMEOUT_SEC,
+                headers={"User-Agent": "CEPAT-EmergencyMonitor/1.0"},
+            )
             resp.raise_for_status()
             feed = feedparser.parse(resp.content)
 
@@ -80,7 +100,7 @@ class IntelligenceAgent:
             for entry in feed.entries:
                 # Parse waktu publikasi
                 pub_str = entry.get("published", "")
-                pub_dt  = None
+                pub_dt = None
                 if pub_str:
                     try:
                         pub_dt = parsedate_to_datetime(pub_str)
@@ -101,14 +121,16 @@ class IntelligenceAgent:
                 # Bersihkan HTML tags
                 content = re.sub(r"<[^>]+>", " ", content).strip()
 
-                articles.append({
-                    "source_name":  name,
-                    "source_url":   entry.get("link", ""),
-                    "source_type":  "news_rss",
-                    "title":        entry.get("title", "").strip(),
-                    "content":      content[:2000],
-                    "published_at": pub_str,
-                })
+                articles.append(
+                    {
+                        "source_name": name,
+                        "source_url": entry.get("link", ""),
+                        "source_type": "news_rss",
+                        "title": entry.get("title", "").strip(),
+                        "content": content[:2000],
+                        "published_at": pub_str,
+                    }
+                )
 
             logger.info(f"Feed '{name}': {len(articles)} artikel ditemukan")
             return articles
@@ -121,14 +143,111 @@ class IntelligenceAgent:
             logger.error(f"Error saat fetch feed '{name}': {e}")
         return []
 
+    def _fetch_telegram_messages(self) -> list[dict]:
+        """
+        Fetch pesan terbaru dari Telegram channels yang dikonfigurasi.
+        Membutuhkan TELEGRAM_API_ID dan TELEGRAM_API_HASH di environment.
+        Jika tidak diset, return list kosong (silent skip).
+        """
+        if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
+            logger.debug(
+                "Telegram API credentials tidak diset — skip Telegram monitoring."
+            )
+            return []
+
+        try:
+            from telethon import TelegramClient
+            from telethon.tl.types import Message
+        except ImportError:
+            logger.warning(
+                "Package 'telethon' tidak ditemukan. Jalankan: pip install telethon>=1.36.0"
+            )
+            return []
+
+        async def _async_fetch():
+            session_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                TELEGRAM_SESSION_DIR,
+                "cepat_telegram",
+            )
+            articles = []
+            try:
+                client = TelegramClient(
+                    session_path, int(TELEGRAM_API_ID), TELEGRAM_API_HASH
+                )
+                await client.connect()
+
+                if not await client.is_user_authorized():
+                    logger.warning(
+                        "Telegram client belum terautentikasi. Jalankan autentikasi manual terlebih dahulu."
+                    )
+                    await client.disconnect()
+                    return []
+
+                for channel in TELEGRAM_CHANNELS:
+                    try:
+                        msgs = await client.get_messages(
+                            channel, limit=TELEGRAM_MAX_MSGS
+                        )
+                        for msg in msgs:
+                            if not isinstance(msg, Message) or not msg.text:
+                                continue
+                            text = msg.text.lower()
+                            if not any(kw in text for kw in EARTHQUAKE_KEYWORDS):
+                                continue
+                            pub_str = (
+                                msg.date.strftime("%a, %d %b %Y %H:%M:%S +0000")
+                                if msg.date
+                                else ""
+                            )
+                            articles.append(
+                                {
+                                    "source_name": f"Telegram:{channel}",
+                                    "source_url": f"https://t.me/{channel}/{msg.id}",
+                                    "source_type": "telegram",
+                                    "title": msg.text[:100].replace("\n", " "),
+                                    "content": msg.text[:2000],
+                                    "published_at": pub_str,
+                                }
+                            )
+                        logger.info(
+                            f"Telegram @{channel}: "
+                            f"{len([m for m in msgs if isinstance(m, Message) and m.text])} pesan, "
+                            f"relevan: {sum(1 for a in articles if f'Telegram:{channel}' == a['source_name'])}"
+                        )
+                    except Exception as e:
+                        logger.warning(f"Gagal fetch Telegram channel @{channel}: {e}")
+
+                await client.disconnect()
+            except Exception as e:
+                logger.error(f"Telegram client error: {e}")
+            return articles
+
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(_async_fetch())
+            loop.close()
+            return result
+        except Exception as e:
+            logger.error(f"Error menjalankan Telegram fetch: {e}")
+            return []
+
     def _fetch_all_feeds(self) -> list[dict]:
-        """Fetch semua RSS feed yang dikonfigurasi."""
+        """Fetch semua RSS feed dan Telegram channels yang dikonfigurasi."""
         all_articles = []
         for name, url in RSS_FEEDS.items():
             articles = self._fetch_feed(name, url)
             all_articles.extend(articles)
             time.sleep(0.3)  # Jeda kecil agar tidak flood server
-        logger.info(f"Total artikel dari semua feed: {len(all_articles)}")
+
+        # Tambahkan dari Telegram (jika dikonfigurasi)
+        telegram_articles = self._fetch_telegram_messages()
+        if telegram_articles:
+            all_articles.extend(telegram_articles)
+            logger.info(f"Total artikel Telegram: {len(telegram_articles)}")
+
+        logger.info(f"Total artikel dari semua sumber: {len(all_articles)}")
         return all_articles
 
     # ─────────────────────────────────────────────────────────
@@ -149,7 +268,17 @@ class IntelligenceAgent:
         """Ekstrak kata kunci lokasi dari deskripsi BMKG."""
         # Format BMKG: "67 km BaratLaut TIMORTENGAHUT-NTT"
         # Ambil bagian setelah arah mata angin
-        directions = ["utara", "selatan", "timur", "barat", "laut", "daya", "tenggara", "timurlaut", "baratlaut"]
+        directions = [
+            "utara",
+            "selatan",
+            "timur",
+            "barat",
+            "laut",
+            "daya",
+            "tenggara",
+            "timurlaut",
+            "baratlaut",
+        ]
         words = location_desc.lower().split()
         location_words = []
         found_dir = False
@@ -174,7 +303,10 @@ class IntelligenceAgent:
         Return {"status": "VALID|HOAX|UNVERIFIED", "reasoning": "..."}.
         """
         if not self._model:
-            return {"status": "UNVERIFIED", "reasoning": "Gemini API tidak tersedia (API key tidak diset)."}
+            return {
+                "status": "UNVERIFIED",
+                "reasoning": "Gemini API tidak tersedia (API key tidak diset).",
+            }
 
         try:
             prompt = self._hoax_prompt_template.format(
@@ -183,8 +315,13 @@ class IntelligenceAgent:
                 content=article.get("content", "")[:1500],
             )
         except KeyError as e:
-            logger.error(f"Template hoax_filter.txt error — placeholder tidak valid: {e}")
-            return {"status": "UNVERIFIED", "reasoning": "Gagal memformat prompt — template error."}
+            logger.error(
+                f"Template hoax_filter.txt error — placeholder tidak valid: {e}"
+            )
+            return {
+                "status": "UNVERIFIED",
+                "reasoning": "Gagal memformat prompt — template error.",
+            }
 
         try:
             response = self._model.models.generate_content(
@@ -193,22 +330,27 @@ class IntelligenceAgent:
                 config={"max_output_tokens": 256},
             )
             if not response.text:
-                return {"status": "UNVERIFIED", "reasoning": "Respons diblokir Gemini safety filter."}
+                return {
+                    "status": "UNVERIFIED",
+                    "reasoning": "Respons diblokir Gemini safety filter.",
+                }
             raw_text = response.text.strip()
 
             # Extract JSON dari response
-            json_match = re.search(r'\{[^{}]*\}', raw_text, re.DOTALL)
+            json_match = re.search(r"\{[^{}]*\}", raw_text, re.DOTALL)
             if json_match:
                 result = json.loads(json_match.group())
                 status = result.get("status", "UNVERIFIED").upper()
                 if status not in ("VALID", "HOAX", "UNVERIFIED"):
                     status = "UNVERIFIED"
                 return {
-                    "status":    status,
+                    "status": status,
                     "reasoning": result.get("reasoning", ""),
                 }
 
-            logger.warning(f"Respons Gemini tidak mengandung JSON valid: {raw_text[:100]}")
+            logger.warning(
+                f"Respons Gemini tidak mengandung JSON valid: {raw_text[:100]}"
+            )
         except json.JSONDecodeError as e:
             logger.warning(f"Gagal parse JSON dari Gemini: {e}")
         except Exception as e:
@@ -225,11 +367,13 @@ class IntelligenceAgent:
         Jalankan intelligence collection untuk satu gempa.
         Return list intelligence report yang sudah disimpan ke DB.
         """
-        eq_id    = earthquake["id"]
-        eq_loc   = earthquake.get("location_desc", "")
-        eq_mag   = earthquake.get("magnitude", 0)
+        eq_id = earthquake["id"]
+        eq_loc = earthquake.get("location_desc", "")
+        eq_mag = earthquake.get("magnitude", 0)
 
-        logger.info(f"IntelligenceAgent: memproses gempa ID={eq_id} M{eq_mag} — {eq_loc}")
+        logger.info(
+            f"IntelligenceAgent: memproses gempa ID={eq_id} M{eq_mag} — {eq_loc}"
+        )
 
         # 1. Fetch semua feeds
         all_articles = self._fetch_all_feeds()
@@ -250,15 +394,15 @@ class IntelligenceAgent:
             classification = self._classify_credibility(article)
 
             report = {
-                "earthquake_id":      eq_id,
-                "source_name":        article["source_name"],
-                "source_url":         article["source_url"],
-                "source_type":        article.get("source_type", "news_rss"),
-                "title":              article["title"],
-                "content":            article["content"],
+                "earthquake_id": eq_id,
+                "source_name": article["source_name"],
+                "source_url": article["source_url"],
+                "source_type": article.get("source_type", "news_rss"),
+                "title": article["title"],
+                "content": article["content"],
                 "credibility_status": classification["status"],
-                "llm_reasoning":      classification["reasoning"],
-                "published_at":       article.get("published_at", ""),
+                "llm_reasoning": classification["reasoning"],
+                "published_at": article.get("published_at", ""),
             }
 
             report_id = self.db.insert_intelligence_report(report)
@@ -266,7 +410,9 @@ class IntelligenceAgent:
                 report["id"] = report_id
                 saved_reports.append(report)
 
-                status_icon = {"VALID": "✔", "HOAX": "✘", "UNVERIFIED": "?"}.get(classification["status"], "?")
+                status_icon = {"VALID": "✔", "HOAX": "✘", "UNVERIFIED": "?"}.get(
+                    classification["status"], "?"
+                )
                 logger.info(
                     f"  [{status_icon}] {classification['status']:10} | "
                     f"{article['source_name']:8} | {article['title'][:60]}"
@@ -274,5 +420,7 @@ class IntelligenceAgent:
 
             time.sleep(0.2)  # Rate limit untuk Claude API
 
-        logger.info(f"IntelligenceAgent selesai: {len(saved_reports)} laporan disimpan untuk gempa {eq_id}")
+        logger.info(
+            f"IntelligenceAgent selesai: {len(saved_reports)} laporan disimpan untuk gempa {eq_id}"
+        )
         return saved_reports

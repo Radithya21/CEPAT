@@ -46,8 +46,9 @@ class MonitoringAgent:
         agent.stop()         # hentikan background thread
     """
 
-    def __init__(self, db_handler: DatabaseHandler = None):
+    def __init__(self, db_handler: DatabaseHandler = None, on_event = None):
         self.db          = db_handler or DatabaseHandler()
+        self.on_event    = on_event
         self.is_running  = False
         self._thread: threading.Thread | None = None
         self.last_poll_time: datetime | None  = None
@@ -148,6 +149,11 @@ class MonitoringAgent:
             inserted = self.db.insert_earthquake(eq)
             if inserted:
                 new_count += 1
+                if self.on_event:
+                    try:
+                        self.on_event("new_earthquake", eq)
+                    except Exception as e:
+                        logger.error(f"Gagal emit new_earthquake: {e}")
                 if eq["magnitude"] >= MAGNITUDE_THRESHOLD:
                     high_count += 1
                     logger.warning(

@@ -652,3 +652,196 @@ class DatabaseHandler:
         except Exception as e:
             logger.error(f"Gagal ambil approval stats: {e}")
             return {"pending_drafts": 0, "pending_plans": 0, "total_pending": 0, "approved_today": 0}
+
+    # ─────────────────────────────────────────────────────────
+    #  T3.4 — Operator User Management
+    # ─────────────────────────────────────────────────────────
+
+    def _hash_password(self, password: str) -> str:
+        """Hash password dengan SHA-256 + salt sederhana. Gunakan bcrypt di produksi."""
+        import hashlib
+        salt = "cepat_bpbd_2025_salt"
+        return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
+
+    def verify_password(self, password: str, hashed: str) -> bool:
+        return self._hash_password(password) == hashed
+
+    def get_operator_by_username(self, username: str) -> dict | None:
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT * FROM operators WHERE username = ? AND is_active = 1",
+                    (username,)
+                ).fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            logger.error(f"Gagal ambil operator {username}: {e}")
+            return None
+
+    def update_last_login(self, username: str):
+        try:
+            from datetime import datetime
+            with self._connect() as conn:
+                conn.execute(
+                    "UPDATE operators SET last_login = ? WHERE username = ?",
+                    (datetime.now().isoformat(), username)
+                )
+        except Exception as e:
+            logger.error(f"Gagal update last_login: {e}")
+
+    def get_all_operators(self) -> list[dict]:
+        try:
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT id, username, full_name, role, is_active, last_login, created_at FROM operators ORDER BY created_at DESC"
+                ).fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Gagal ambil daftar operator: {e}")
+            return []
+
+    def create_operator(self, username: str, password: str, full_name: str, role: str = "operator") -> dict:
+        try:
+            password_hash = self._hash_password(password)
+            with self._connect() as conn:
+                conn.execute(
+                    "INSERT INTO operators (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)",
+                    (username, password_hash, full_name, role)
+                )
+            return {"success": True}
+        except Exception as e:
+            logger.error(f"Gagal buat operator: {e}")
+            return {"success": False, "error": str(e)}
+
+    def toggle_operator(self, operator_id: int) -> dict:
+        try:
+            with self._connect() as conn:
+                current = conn.execute(
+                    "SELECT is_active FROM operators WHERE id = ?", (operator_id,)
+                ).fetchone()
+                if not current:
+                    return {"success": False, "error": "Operator tidak ditemukan"}
+                new_val = 0 if current["is_active"] else 1
+                conn.execute("UPDATE operators SET is_active = ? WHERE id = ?", (new_val, operator_id))
+            return {"success": True, "is_active": new_val}
+        except Exception as e:
+            logger.error(f"Gagal toggle operator: {e}")
+            return {"success": False, "error": str(e)}
+
+    def reset_operator_password(self, operator_id: int, new_password: str) -> dict:
+        try:
+            new_hash = self._hash_password(new_password)
+            with self._connect() as conn:
+                conn.execute(
+                    "UPDATE operators SET password_hash = ? WHERE id = ?",
+                    (new_hash, operator_id)
+                )
+            return {"success": True}
+        except Exception as e:
+            logger.error(f"Gagal reset password: {e}")
+            return {"success": False, "error": str(e)}
+
+    def seed_operators_from_config(self, operators_config: dict):
+        """Seed operator dari config lama jika tabel kosong."""
+        try:
+            with self._connect() as conn:
+                count = conn.execute("SELECT COUNT(*) FROM operators").fetchone()[0]
+                if count == 0:
+                    for username, password in operators_config.items():
+                        role = "admin" if username == "admin" else "operator"
+                        full_name = "Administrator BPBD" if username == "admin" else f"Operator {username}"
+                        password_hash = self._hash_password(password)
+                        conn.execute(
+                            "INSERT OR IGNORE INTO operators (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)",
+                            (username, password_hash, full_name, role)
+                        )
+                    logger.info(f"Seeded {len(operators_config)} operators from config")
+        except Exception as e:
+            logger.error(f"Gagal seed operators: {e}")
+
+    # ─────────────────────────────────────────────────────────
+    #  T3.6 — Analytics Methods
+    # ─────────────────────────────────────────────────────────
+
+    def get_monthly_analytics(self) -> list[dict]:
+        try:
+            with self._connect() as conn:
+                rows = conn.execute("""
+                    SELECT * FROM (
+                        SELECT 
+                            strftime('%Y-%m', timestamp) as month,
+                            COUNT(*) as total,
+                            SUM(CASE WHEN magnitude >= 5.0 THEN 1 ELSE 0 END) as major,
+                            AVG(magnitude) as avg_mag,
+                            MAX(magnitude) as max_mag
+                        FROM earthquakes
+                        WHERE timestamp IS NOT NULL AND timestamp != ''
+                        GROUP BY month
+                        ORDER BY month DESC
+                        LIMIT 12
+                    ) ORDER BY month ASC
+                """).fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Gagal ambil data analitik bulanan: {e}")
+            return []
+
+    def get_heatmap_analytics(self) -> list[dict]:
+        try:
+            with self._connect() as conn:
+                rows = conn.execute("""
+                    SELECT 
+                        round(latitude, 1) as lat_grid,
+                        round(longitude, 1) as lon_grid,
+                        COUNT(*) as count,
+                        MAX(magnitude) as max_mag
+                    FROM earthquakes
+                    WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+                    GROUP BY lat_grid, lon_grid
+                    ORDER BY count DESC
+                    LIMIT 200
+                """).fetchall()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Gagal ambil data heatmap: {e}")
+            return []
+
+    def get_summary_analytics(self) -> dict:
+        try:
+            with self._connect() as conn:
+                tot_eq = conn.execute("SELECT COUNT(*) FROM earthquakes").fetchone()[0]
+                major_eq = conn.execute("SELECT COUNT(*) FROM earthquakes WHERE magnitude >= 5.0").fetchone()[0]
+                avg_mag = conn.execute("SELECT AVG(magnitude) FROM earthquakes").fetchone()[0] or 0.0
+                max_mag = conn.execute("SELECT MAX(magnitude) FROM earthquakes").fetchone()[0] or 0.0
+                pipe_done = conn.execute("SELECT COUNT(*) FROM earthquakes WHERE pipeline_status = 'DONE'").fetchone()[0]
+                
+                tot_drafts = conn.execute("SELECT COUNT(*) FROM communication_drafts").fetchone()[0]
+                appr_drafts = conn.execute("SELECT COUNT(*) FROM communication_drafts WHERE status = 'APPROVED'").fetchone()[0]
+                
+                pipe_ratio = round((pipe_done / tot_eq * 100)) if tot_eq > 0 else 0
+                appr_ratio = round((appr_drafts / tot_drafts * 100)) if tot_drafts > 0 else 0
+                
+                return {
+                    "total_earthquakes": tot_eq,
+                    "major_earthquakes": major_eq,
+                    "avg_magnitude": avg_mag,
+                    "max_magnitude": max_mag,
+                    "pipeline_done": pipe_done,
+                    "pipeline_ratio": pipe_ratio,
+                    "total_drafts": tot_drafts,
+                    "approved_drafts": appr_drafts,
+                    "approval_ratio": appr_ratio
+                }
+        except Exception as e:
+            logger.error(f"Gagal ambil ringkasan analitik: {e}")
+            return {
+                "total_earthquakes": 0,
+                "major_earthquakes": 0,
+                "avg_magnitude": 0.0,
+                "max_magnitude": 0.0,
+                "pipeline_done": 0,
+                "pipeline_ratio": 0,
+                "total_drafts": 0,
+                "approved_drafts": 0,
+                "approval_ratio": 0
+            }

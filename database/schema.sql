@@ -104,3 +104,18 @@ CREATE TABLE IF NOT EXISTS audit_log (
   notes        TEXT    DEFAULT '',
   timestamp    DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ── T3.4 — Operator User Management ─────────────────────────
+CREATE TABLE IF NOT EXISTS operators (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  username      TEXT    UNIQUE NOT NULL,
+  password_hash TEXT    NOT NULL,
+  full_name     TEXT    NOT NULL,
+  role          TEXT    DEFAULT 'operator',    -- 'admin' | 'operator' | 'viewer'
+  is_active     INTEGER DEFAULT 1,
+  last_login    TEXT,
+  created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_operators_username ON operators(username);
+CREATE INDEX IF NOT EXISTS idx_operators_role     ON operators(role);

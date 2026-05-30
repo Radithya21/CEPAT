@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CEPAT — Login</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #0d1117;
+                --surface: #161b22;
+                --surface-2: #1c2128;
+                --border: #21262d;
+                --border-2: #30363d;
+                --text-1: #e6edf3;
+                --text-2: #7d8590;
+                --text-3: #3d444d;
+                --red: #f85149;
+                --red-dim: rgba(248, 81, 73, 0.08);
+                --red-border: rgba(248, 81, 73, 0.25);
+                --blue: #58a6ff;
+                --blue-sub: rgba(88, 166, 255, 0.08);
+                --green: #3fb950;
+                --orange: #d29922;
+                --sans: "Inter", sans-serif;
+                --mono: "JetBrains Mono", monospace;
+                --r: 6px;
+            }
+            :root[data-theme="light"] {
+                --bg: #f0f4f8;
+                --surface: #ffffff;
+                --surface-2: #f6f8fa;
+                --border: #d0d7de;
+                --border-2: #b0b8c1;
+                --text-1: #1f2328;
+                --text-2: #656d76;
+                --text-3: #9ba2a9;
+                --red-dim: rgba(248, 81, 73, 0.06);
+                --red-border: rgba(248, 81, 73, 0.22);
+                --blue-sub: rgba(88, 166, 255, 0.06);
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: var(--bg);
+                color: var(--text-1);
+                font-family: var(--sans);
+                font-size: 13px;
+                -webkit-font-smoothing: antialiased;
+                transition:
+                    background 0.2s,
+                    color 0.2s;
+            }
+
+            /* ── GRID BACKGROUND ──────────────────────────────────────── */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background-image:
+                    linear-gradient(var(--border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+                background-size: 48px 48px;
+                opacity: 0.35;
+                pointer-events: none;
+                z-index: 0;
+            }
+            body::after {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: radial-gradient(
+                    ellipse 60% 50% at 50% 50%,
+                    transparent 40%,
+                    var(--bg) 100%
+                );
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            /* ── SHELL ────────────────────────────────────────────────── */
+            .shell {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100vw;
+                height: 100vh;
+            }
+
+            /* ── THEME TOGGLE ─────────────────────────────────────────── */
+            .theme-btn {
+                position: fixed;
+                top: 16px;
+                right: 16px;
+                z-index: 10;
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                color: var(--text-2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition:
+                    border-color 0.12s,
+                    color 0.12s,
+                    background 0.12s;
+            }
+            .theme-btn:hover {
+                border-color: var(--border-2);
+                color: var(--text-1);
+            }
+
+            /* ── CARD ─────────────────────────────────────────────────── */
+            .card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                width: min(400px, 94vw);
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.04),
+                    0 24px 64px rgba(0, 0, 0, 0.35),
+                    0 8px 24px rgba(0, 0, 0, 0.2);
+                animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+                overflow: hidden;
+            }
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* ── BRAND SECTION ────────────────────────────────────────── */
+            .brand {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 32px 32px 24px;
+                border-bottom: 1px solid var(--border);
+                background: var(--surface-2);
+                position: relative;
+                overflow: hidden;
+            }
+            .brand::before {
+                content: "";
+                position: absolute;
+                top: -40px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 200px;
+                height: 200px;
+                background: radial-gradient(
+                    circle,
+                    rgba(248, 81, 73, 0.06) 0%,
+                    transparent 70%
+                );
+                pointer-events: none;
+            }
+            .brand-logo {
+                width: 80px;
+                height: 80px;
+                border-radius: 16px;
+                object-fit: cover;
+                margin-bottom: 16px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+                border: 1px solid var(--border);
+            }
+            .brand-name {
+                font-family: var(--mono);
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: 0.18em;
+                color: var(--text-1);
+                margin-bottom: 4px;
+            }
+            .brand-sub {
+                font-size: 11px;
+                color: var(--text-3);
+                letter-spacing: 0.04em;
+                text-align: center;
+                line-height: 1.5;
+            }
+
+            /* ── FORM SECTION ─────────────────────────────────────────── */
+            .form-wrap {
+                padding: 28px 32px 24px;
+            }
+
+            /* ── ERROR BOX ────────────────────────────────────────────── */
+            .err-box {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: var(--red-dim);
+                border: 1px solid var(--red-border);
+                border-radius: var(--r);
+                padding: 10px 14px;
+                margin-bottom: 20px;
+                font-size: 12px;
+                color: var(--red);
+                animation: fadeIn 0.15s ease;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-4px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .err-icon {
+                flex-shrink: 0;
+            }
+
+            /* ── FIELD ────────────────────────────────────────────────── */
+            .field {
+                margin-bottom: 16px;
+            }
+            .field-label {
+                display: block;
+                font-size: 11px;
+                font-weight: 500;
+                color: var(--text-2);
+                margin-bottom: 6px;
+                letter-spacing: 0.04em;
+            }
+            .field-input {
+                width: 100%;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                border-radius: var(--r);
+                color: var(--text-1);
+                font-family: var(--sans);
+                font-size: 13px;
+                padding: 10px 12px;
+                outline: none;
+                transition:
+                    border-color 0.15s,
+                    box-shadow 0.15s;
+            }
+            .field-input::placeholder {
+                color: var(--text-3);
+            }
+            .field-input:focus {
+                border-color: var(--blue);
+                box-shadow: 0 0 0 3px var(--blue-sub);
+            }
+
+            /* ── SUBMIT BUTTON ────────────────────────────────────────── */
+            .submit-btn {
+                width: 100%;
+                padding: 11px 0;
+                border-radius: var(--r);
+                border: none;
+                background: var(--red);
+                color: #fff;
+                font-family: var(--sans);
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-top: 8px;
+                transition:
+                    opacity 0.15s,
+                    transform 0.1s,
+                    box-shadow 0.15s;
+                box-shadow: 0 2px 12px rgba(248, 81, 73, 0.25);
+            }
+            .submit-btn:hover:not(:disabled) {
+                opacity: 0.88;
+                box-shadow: 0 4px 18px rgba(248, 81, 73, 0.35);
+            }
+            .submit-btn:active:not(:disabled) {
+                transform: scale(0.98);
+            }
+            .submit-btn:disabled {
+                opacity: 0.55;
+                cursor: default;
+            }
+
+            /* ── FOOTER ───────────────────────────────────────────────── */
+            .card-footer {
+                padding: 12px 32px;
+                border-top: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: var(--surface-2);
+            }
+            .footer-left {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 10px;
+                color: var(--text-3);
+                font-family: var(--mono);
+            }
+            .footer-right {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 10px;
+                color: var(--text-3);
+            }
+            .status-dot {
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                background: var(--green);
+                animation: pulse 2s ease-in-out infinite;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                    box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4);
+                }
+                50% {
+                    opacity: 0.7;
+                    box-shadow: 0 0 0 4px rgba(63, 185, 80, 0);
+                }
+            }
+
+            /* ── CLOCK (top-left corner) ──────────────────────────────── */
+            .corner-clock {
+                position: fixed;
+                top: 16px;
+                left: 20px;
+                z-index: 10;
+                font-family: var(--mono);
+                font-size: 12px;
+                color: var(--text-3);
+                letter-spacing: 0.06em;
+                line-height: 1;
+            }
+            .corner-clock-time {
+                color: var(--text-2);
+            }
+
+            @media (max-width: 440px) {
+                .brand {
+                    padding: 24px 24px 18px;
+                }
+                .form-wrap {
+                    padding: 22px 24px 20px;
+                }
+                .card-footer {
+                    padding: 12px 24px;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                }
+                .brand-logo {
+                    width: 64px;
+                    height: 64px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Clock top-left -->
+        <div class="corner-clock">
+            <span class="corner-clock-time" id="clk-time">00:00:00</span>
+        </div>
+
+        <!-- Theme toggle top-right -->
+        <button
+            class="theme-btn"
+            id="theme-btn"
+            type="button"
+            title="Toggle tema"
+            aria-label="Toggle dark/light mode"
+        >
+            <svg
+                id="theme-icon-sun"
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.3"
+                stroke-linecap="round"
+                style="display: none"
+            >
+                <circle cx="7" cy="7" r="2.5" />
+                <path
+                    d="M7 1.5v1.2M7 11.3v1.2M1.5 7h1.2M11.3 7h1.2M3.3 3.3l.85.85M9.85 9.85l.85.85M9.85 4.15l.85-.85M3.3 10.7l.85-.85"
+                />
+            </svg>
+            <svg
+                id="theme-icon-moon"
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.3"
+                stroke-linecap="round"
+            >
+                <path
+                    d="M9.5 2.5a5 5 0 1 0 2 6.8 4.5 4.5 0 0 1-2-.5 4.8 4.8 0 0 1 0-6.3z"
+                />
+            </svg>
+        </button>
+
+        <div class="shell">
+            <div class="card">
+                <!-- BRAND -->
+                <div class="brand">
+                    <!-- CEPAT Logo Image (logo.jpg) -->
+                    <img
+                        class="brand-logo"
+                        src="{{ url_for('static', filename='logo.jpg') }}"
+                        alt="CEPAT Logo"
+                    />
+                    <div class="brand-name">CEPAT</div>
+                    <div class="brand-sub">
+                        Sistem Monitoring Gempa Bumi<br />BPBD — Akses Operator
+                    </div>
+                </div>
+
+                <!-- FORM -->
+                <div class="form-wrap">
+                    {% if error %}
+                    <div class="err-box">
+                        <span class="err-icon">
+                            <svg
+                                width="15"
+                                height="15"
+                                viewBox="0 0 15 15"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M7.5 1.5 13.5 12.5H1.5z" />
+                                <line x1="7.5" y1="6" x2="7.5" y2="9.5" />
+                                <circle
+                                    cx="7.5"
+                                    cy="11"
+                                    r="0.8"
+                                    fill="currentColor"
+                                    stroke="none"
+                                />
+                            </svg>
+                        </span>
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form
+                        method="POST"
+                        action="/login"
+                        id="login-form"
+                        novalidate
+                    >
+                        <div class="field">
+                            <label class="field-label" for="username"
+                                >Username</label
+                            >
+                            <input
+                                class="field-input"
+                                type="text"
+                                id="username"
+                                name="username"
+                                placeholder="Masukkan username"
+                                autocomplete="username"
+                                autofocus
+                                required
+                            />
+                        </div>
+                        <div class="field">
+                            <label class="field-label" for="password"
+                                >Password</label
+                            >
+                            <input
+                                class="field-input"
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Masukkan password"
+                                autocomplete="current-password"
+                                required
+                            />
+                        </div>
+                        <button
+                            class="submit-btn"
+                            type="submit"
+                            id="submit-btn"
+                        >
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect
+                                    x="2"
+                                    y="6.5"
+                                    width="10"
+                                    height="6.5"
+                                    rx="1.5"
+                                />
+                                <path d="M4.5 6.5V4.5a2.5 2.5 0 0 1 5 0V6.5" />
+                            </svg>
+                            Masuk
+                        </button>
+                    </form>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="card-footer">
+                    <div class="footer-left">
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 12 12"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <rect
+                                x="1.5"
+                                y="5"
+                                width="9"
+                                height="6.5"
+                                rx="1.2"
+                            />
+                            <path d="M3.5 5V3.5a2.5 2.5 0 0 1 5 0V5" />
+                        </svg>
+                        <span>Akses Terbatas</span>
+                    </div>
+                    <div class="footer-right">
+                        <div class="status-dot"></div>
+                        <span>CEPAT v2</span>
+                    </div>
+                </div>
+            </div>
+            <!-- /.card -->
+        </div>
+        <!-- /.shell -->
+
+        <script>
+            (function () {
+                // ── THEME ──────────────────────────────────────────────────
+                var STORAGE_KEY = "cepat.uiTheme";
+                var root = document.documentElement;
+                var btn = document.getElementById("theme-btn");
+                var iconSun = document.getElementById("theme-icon-sun");
+                var iconMoon = document.getElementById("theme-icon-moon");
+
+                function applyTheme(t) {
+                    root.dataset.theme = t;
+                    if (t === "light") {
+                        iconSun.style.display = "block";
+                        iconMoon.style.display = "none";
+                    } else {
+                        iconSun.style.display = "none";
+                        iconMoon.style.display = "block";
+                    }
+                    try {
+                        localStorage.setItem(STORAGE_KEY, t);
+                    } catch (e) {}
+                }
+
+                function getInitialTheme() {
+                    try {
+                        var saved = localStorage.getItem(STORAGE_KEY);
+                        if (saved === "light" || saved === "dark") return saved;
+                    } catch (e) {}
+                    return window.matchMedia &&
+                        window.matchMedia("(prefers-color-scheme: light)")
+                            .matches
+                        ? "light"
+                        : "dark";
+                }
+
+                applyTheme(getInitialTheme());
+
+                btn.addEventListener("click", function () {
+                    applyTheme(
+                        root.dataset.theme === "light" ? "dark" : "light",
+                    );
+                });
+
+                // ── CLOCK ──────────────────────────────────────────────────
+                var clkEl = document.getElementById("clk-time");
+                function updateClock() {
+                    var d = new Date();
+                    var p = function (n) {
+                        return String(n).padStart(2, "0");
+                    };
+                    clkEl.textContent =
+                        p(d.getHours()) +
+                        ":" +
+                        p(d.getMinutes()) +
+                        ":" +
+                        p(d.getSeconds());
+                }
+                updateClock();
+                setInterval(updateClock, 1000);
+
+                // ── FORM SUBMIT ────────────────────────────────────────────
+                var form = document.getElementById("login-form");
+                var submitBtn = document.getElementById("submit-btn");
+                form.addEventListener("submit", function () {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML =
+                        '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite"><path d="M7 1.5A5.5 5.5 0 1 1 1.5 7"/></svg> Memproses…';
+                });
+            })();
+        </script>
+        <style>
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </body>
+</html>

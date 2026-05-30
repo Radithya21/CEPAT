@@ -42,11 +42,12 @@ class Orchestrator:
         orc.get_status()      # info status untuk API
     """
 
-    def __init__(self, db_handler: DatabaseHandler = None):
+    def __init__(self, db_handler: DatabaseHandler = None, on_event = None):
         self.db = db_handler or DatabaseHandler()
+        self.on_event = on_event
 
         # Inisialisasi semua agent dengan shared DB handler
-        self.monitoring_agent    = MonitoringAgent(db_handler=self.db)
+        self.monitoring_agent    = MonitoringAgent(db_handler=self.db, on_event=self.on_event)
         self.intelligence_agent  = IntelligenceAgent(db_handler=self.db)
         self.analysis_agent      = AnalysisAgent(db_handler=self.db)
         self.communication_agent = CommunicationAgent(db_handler=self.db)
@@ -118,6 +119,15 @@ class Orchestrator:
                 result["comm_drafts"] = len(comm_drafts)
                 self._stats["total_comm_drafts"] += len(comm_drafts)
 
+                if self.on_event and len(comm_drafts) > 0:
+                    try:
+                        self.on_event("draft_pending", {
+                            "earthquake_id": eq_id,
+                            "drafts_count": len(comm_drafts)
+                        })
+                    except Exception as e:
+                        logger.error(f"Gagal emit draft_pending: {e}")
+
                 # Step 5: Coordination Agent
                 logger.info(f"[Step 5/5] Coordination Agent untuk gempa {eq_id}…")
                 coord_plan = self.coordination_agent.run(eq_id)
@@ -127,6 +137,16 @@ class Orchestrator:
 
             # Done
             self.db.update_pipeline_status(eq_id, "DONE")
+            if self.on_event:
+                try:
+                    self.on_event("pipeline_done", {
+                        "earthquake_id": eq_id,
+                        "magnitude": eq_mag,
+                        "location": earthquake.get("location_desc", "—"),
+                        "timestamp": earthquake.get("timestamp", "—")
+                    })
+                except Exception as e:
+                    logger.error(f"Gagal emit pipeline_done: {e}")
             logger.info(
                 f"✔ Pipeline selesai: Gempa {eq_id} | "
                 f"{len(intel_reports)} intel | "
