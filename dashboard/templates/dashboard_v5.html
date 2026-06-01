@@ -665,9 +665,15 @@
                 padding: 8px 8px 12px;
                 display: flex;
                 flex-direction: column;
+                max-height: 290px;
+                overflow-y: auto;
             }
             .feed-body::-webkit-scrollbar {
-                display: none;
+                width: 4px;
+            }
+            .feed-body::-webkit-scrollbar-thumb {
+                background: var(--border-2);
+                border-radius: 2px;
             }
 
             .feed-row {

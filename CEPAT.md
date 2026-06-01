@@ -61,7 +61,7 @@ Berita/RSS ──► [2. INTELLIGENCE] → Hoax filter
 Setiap 5 menit, otomatis mengambil data gempa terbaru dari BMKG. Jika ada gempa M≥5, langsung masuk ke sistem dan memicu agen berikutnya.
 
 **Agen 2 — Intelligence Agent**
-Mengumpulkan berita dari RSS feed media nasional (Antara, Detik, Tribun, Google News). Lalu menggunakan Claude AI untuk menilai setiap berita: apakah **VALID**, **HOAX**, atau **UNVERIFIED**. Ini penting karena saat bencana banyak info palsu beredar di media sosial.
+Mengumpulkan berita dari RSS feed media nasional (Antara, Detik, Tribun, Google News) serta Telegram channel tanggap bencana. Lalu menggunakan Google Gemini AI untuk menilai setiap berita: apakah **VALID**, **HOAX**, atau **UNVERIFIED**. Ini penting karena saat bencana banyak info palsu beredar di media sosial.
 
 **Agen 3 — Analysis Agent**
 Menggabungkan data BMKG + berita yang sudah difilter, lalu menulis **Situation Report** — dokumen ringkasan yang berisi: apa yang terjadi, wilayah mana yang terdampak, seberapa parah risikonya, dan apa yang harus dilakukan. Ini yang biasanya dikerjakan analis BPBD secara manual dalam 30–60 menit.
@@ -120,7 +120,7 @@ AI menghasilkan dokumen sitrep yang berisi:
 - Estimasi wilayah terdampak
 - 5 rekomendasi tindakan prioritas
 
-Tanpa Claude API, sitrep dibuat dengan aturan bawaan (fallback). Dengan Claude API, sitrep lebih detail dan kontekstual.
+Tanpa Gemini API, sitrep dibuat dengan aturan bawaan (fallback). Dengan Gemini API, sitrep lebih detail dan kontekstual.
 
 ---
 
@@ -189,13 +189,13 @@ Lalu buka browser:
 | Dashboard utama | `http://localhost:5000` |
 | Approval Queue | `http://localhost:5000/approval` |
 
-### 3. Demo dengan Claude API (opsional)
+### 3. Demo dengan Gemini API (opsional)
 
 1. Buat file `.env` dari template:
    ```bash
    copy .env.example .env
    ```
-2. Edit `.env`, isi `ANTHROPIC_API_KEY=sk-ant-xxxxx`
+2. Edit `.env`, isi `GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxx`
 3. Jalankan:
    ```bash
    python tests/demo_scenario.py --api

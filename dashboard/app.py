@@ -275,9 +275,9 @@ def api_force_poll():
 @login_required
 def api_feed():
     try:
-        eqs = db.get_all_earthquakes(limit=5)
-        intel = db.get_all_intelligence_reports(limit=5)
-        drafts = db.get_all_communication_drafts(limit=5)
+        eqs = db.get_all_earthquakes(limit=10)
+        intel = db.get_all_intelligence_reports(limit=15)
+        drafts = db.get_all_communication_drafts(limit=10)
 
         feed = []
         for e in eqs:
@@ -297,7 +297,7 @@ def api_feed():
                     "ts": i["created_at"],
                     "ag": "Intelligence Agent",
                     "st": st,
-                    "d": f"Analisis: {i['title'][:40]}... ({i['credibility_status']})",
+                    "d": f"Analisis [{i['source_name']}]: {i['title'][:40]}... ({i['credibility_status']})",
                 }
             )
         for d in drafts:
@@ -311,7 +311,7 @@ def api_feed():
             )
 
         feed.sort(key=lambda x: x["ts"], reverse=True)
-        return jsonify({"status": "success", "data": feed[:8]})
+        return jsonify({"status": "success", "data": feed[:15]})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
