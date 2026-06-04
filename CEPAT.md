@@ -115,7 +115,7 @@ Berita nomor 4 sengaja dibuat hoax — melebih-lebihkan angka agar AI bisa mende
 ### Step 3 — Situation Report Dibuat
 
 AI menghasilkan dokumen sitrep yang berisi:
-- **Risk Level: HIGH** (karena M6.2, kedalaman dangkal)
+- **Risk Level: HIGH** (karena M6.2,n kedalaman dagkal)
 - Ringkasan kejadian
 - Estimasi wilayah terdampak
 - 5 rekomendasi tindakan prioritas

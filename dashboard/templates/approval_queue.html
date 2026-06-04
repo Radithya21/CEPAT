@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -212,28 +212,28 @@
         <div class="stat-icon" style="background:var(--amber-bg);color:var(--amber);"><i class="fas fa-clock"></i></div>
       </div>
       <div class="stat-value" id="sPending" style="color:var(--amber);">—</div>
-      <div class="stat-label">Total Menunggu Approval</div>
+      <div class="stat-label">Total Pending Approvals</div>
     </div>
     <div class="card-panel stat-card">
       <div class="stat-top">
         <div class="stat-icon" style="background:var(--blue-bg);color:var(--blue);"><i class="fas fa-comment-alt"></i></div>
       </div>
       <div class="stat-value" id="sPendingDrafts" style="color:var(--blue);">—</div>
-      <div class="stat-label">Draf Pesan Pending</div>
+      <div class="stat-label">Pending Message Drafts</div>
     </div>
     <div class="card-panel stat-card">
       <div class="stat-top">
         <div class="stat-icon" style="background:var(--violet-bg);color:var(--violet);"><i class="fas fa-tasks"></i></div>
       </div>
       <div class="stat-value" id="sPendingPlans" style="color:var(--violet);">—</div>
-      <div class="stat-label">Rencana Koordinasi Pending</div>
+      <div class="stat-label">Pending Coordination Plans</div>
     </div>
     <div class="card-panel stat-card">
       <div class="stat-top">
         <div class="stat-icon" style="background:var(--green-bg);color:var(--green);"><i class="fas fa-check-double"></i></div>
       </div>
       <div class="stat-value" id="sApprovedToday" style="color:var(--green);">—</div>
-      <div class="stat-label">Disetujui Hari Ini</div>
+      <div class="stat-label">Approved Today</div>
     </div>
   </div>
 
@@ -241,12 +241,12 @@
   <div class="queue-toolbar">
     <div class="tab-nav">
       <button class="tab-btn active" onclick="switchTab('drafts')" id="tabDrafts">
-        <i class="fas fa-comment-alt"></i> Draf Pesan
-        <span class="tab-count" id="countDrafts">0</span>
+        <i class="fas fa-comment-alt"></i> Message Drafts
+          <span class="tab-count" id="countDrafts">0</span>
       </button>
       <button class="tab-btn" onclick="switchTab('plans')" id="tabPlans">
-        <i class="fas fa-tasks"></i> Rencana Koordinasi
-        <span class="tab-count" id="countPlans">0</span>
+        <i class="fas fa-tasks"></i> Coordination Plans
+          <span class="tab-count" id="countPlans">0</span>
       </button>
       <button class="tab-btn" onclick="switchTab('audit')" id="tabAudit">
         <i class="fas fa-history"></i> Audit Log
@@ -255,7 +255,7 @@
     <div class="toolbar-right">
       <label class="toggle-label">
         <input type="checkbox" id="showAllToggle" onchange="loadAll()" />
-        Tampilkan semua (termasuk approved/rejected)
+        Show all (including approved/rejections)
       </label>
       <button class="btn-refresh-sm" onclick="loadAll()"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
@@ -264,28 +264,34 @@
   <!-- Panel: Draf -->
   <div id="panelDrafts">
     <div class="items-grid" id="draftsGrid">
-      <div style="padding:2rem;color:var(--muted);"><i class="fas fa-spinner spin"></i> Memuat…</div>
+      <div style="padding:2rem;color:var(--muted);"><i class="fas fa-spinner spin"></i> Loading...</div>
     </div>
   </div>
 
   <!-- Panel: Plans -->
   <div id="panelPlans" style="display:none;">
     <div class="items-grid" id="plansGrid">
-      <div style="padding:2rem;color:var(--muted);"><i class="fas fa-spinner spin"></i> Memuat…</div>
+      <div style="padding:2rem;color:var(--muted);"><i class="fas fa-spinner spin"></i> Loading...</div>
     </div>
   </div>
 
   <!-- Panel: Audit -->
   <div id="panelAudit" style="display:none;">
     <div class="card-panel audit-wrap">
-      <div class="sec-hdr"><i class="fas fa-history"></i> Riwayat Keputusan Petugas</div>
+      <div class="sec-hdr"><i class="fas fa-history"></i> Officer Decision History</div>
       <div class="audit-scroll">
         <table class="audit-table">
           <thead>
-            <tr><th>Waktu</th><th>Aksi</th><th>Kategori</th><th>ID</th><th>Keputusan</th><th>Petugas</th><th>Catatan</th></tr>
+            <tr><th>Timestamp</th>
+                <th>Action</th>
+                <th>Category</th>
+                <th>ID</th>
+                <th>Decision</th>
+                <th>Officer</th>
+                <th>Notes</th></tr>
           </thead>
           <tbody id="auditBody">
-            <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);">Memuat…</td></tr>
+            <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -326,7 +332,7 @@ function magChip(m) {
     return `<span class="mag-chip ${cls}">M ${m}</span>`;
 }
 function statusBadge(s) {
-    const map = {APPROVED:["status-approved","✓ Disetujui"],REJECTED:["status-rejected","✗ Ditolak"],DRAFT:["status-draft","Menunggu"]};
+    const map = {APPROVED:["status-approved","✓ Approved"],REJECTED:["status-rejected","✗ Rejected"],DRAFT:["status-draft","Pending"]};
     const [cls, label] = map[s] || ["status-draft", s];
     return `<span class="status-badge ${cls}">${label}</span>`;
 }
@@ -377,7 +383,7 @@ async function loadDrafts() {
         document.getElementById("countDrafts").textContent = drafts.length;
         const grid = document.getElementById("draftsGrid");
         if (!drafts.length) {
-            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-check-double" style="color:var(--green);"></i><p>${showAll ? "Belum ada draf pesan." : "Tidak ada draf menunggu approval."}</p></div>`;
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-check-double" style="color:var(--green);"></i><p>${showAll ? "No message drafts yet." : "No drafts pending approval."}</p></div>`;
             return;
         }
         grid.innerHTML = drafts.map(d => renderDraftCard(d)).join("");
@@ -388,10 +394,10 @@ function renderDraftCard(d) {
     const isDraft = d.status === "DRAFT";
     const cardCls = d.status === "APPROVED" ? "card-approved" : d.status === "REJECTED" ? "card-rejected" : "";
     const footer = isDraft
-        ? `<button class="btn-approve" onclick="approveDraft(${d.id})"><i class="fas fa-check"></i> Setujui</button>
+        ? `<button class="btn-approve" onclick="approveDraft(${d.id})"><i class="fas fa-check"></i> Approve</button>
            <button class="btn-edit" onclick="startEditDraft(${d.id})"><i class="fas fa-pen"></i> Edit</button>
-           <button class="btn-reject" onclick="rejectDraft(${d.id})"><i class="fas fa-times"></i> Tolak</button>`
-        : `<div class="action-done">${d.status === "APPROVED" ? "✓ Disetujui" : "✗ Ditolak"} oleh ${d.approved_by || "—"}</div>`;
+           <button class="btn-reject" onclick="rejectDraft(${d.id})"><i class="fas fa-times"></i> Reject</button>`
+        : `<div class="action-done">${d.status === "APPROVED" ? "✓ Approved" : "✗ Rejected"} by ${d.approved_by || "—"}</div>`;
 
     return `<div class="item-card ${cardCls}" id="dcard-${d.id}">
       <div class="item-header">
@@ -407,7 +413,7 @@ function renderDraftCard(d) {
         <textarea class="content-edit" id="editor-${d.id}" style="display:none;">${d.content||""}</textarea>
         <div class="edit-actions" id="edit-actions-${d.id}">
           <button class="btn-save" onclick="saveDraftEdit(${d.id})"><i class="fas fa-save"></i> Simpan</button>
-          <button class="btn-cancel-edit" onclick="cancelDraftEdit(${d.id})">Batal</button>
+          <button class="btn-cancel-edit" onclick="cancelDraftEdit(${d.id})">Cancel</button>
         </div>
         <div class="item-time"><i class="fas fa-clock"></i> ${fmtTime(d.created_at)}</div>
       </div>
@@ -439,26 +445,26 @@ async function saveDraftEdit(id) {
         if (j.status === "success") {
             document.getElementById(`content-${id}`).textContent = newContent;
             cancelDraftEdit(id);
-            showToast("Draf berhasil diedit", "success");
+            showToast("Draft edited successfully", "success");
             loadStats();
-        } else showToast(j.message || "Gagal", "error");
+        } else showToast(j.message || "Failed", "error");
     } catch(e) { showToast("Error: " + e.message, "error"); }
 }
 async function approveDraft(id) {
     try {
         const r = await fetch(`/api/approval/draft/${id}/approve`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER})});
         const j = await r.json();
-        if (j.status === "success") { showToast("Draf disetujui ✓", "success"); loadAll(); loadStats(); }
-        else showToast(j.message || "Gagal", "error");
+        if (j.status === "success") { showToast("Draft approved ✓", "success"); loadAll(); loadStats(); }
+        else showToast(j.message || "Failed", "error");
     } catch(e) { showToast("Error: " + e.message, "error"); }
 }
 async function rejectDraft(id) {
-    const notes = prompt("Alasan penolakan (opsional):") || "";
+    const notes = prompt("Reason for rejection (optional):") || "";
     try {
         const r = await fetch(`/api/approval/draft/${id}/reject`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER,notes})});
         const j = await r.json();
-        if (j.status === "success") { showToast("Draf ditolak", "info"); loadAll(); loadStats(); }
-        else showToast(j.message || "Gagal", "error");
+        if (j.status === "success") { showToast("Draft rejected", "info"); loadAll(); loadStats(); }
+        else showToast(j.message || "Failed", "error");
     } catch(e) { showToast("Error: " + e.message, "error"); }
 }
 
@@ -472,7 +478,7 @@ async function loadPlans() {
         document.getElementById("countPlans").textContent = plans.length;
         const grid = document.getElementById("plansGrid");
         if (!plans.length) {
-            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-check-double" style="color:var(--green);"></i><p>${showAll ? "Belum ada rencana koordinasi." : "Tidak ada rencana menunggu approval."}</p></div>`;
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-check-double" style="color:var(--green);"></i><p>${showAll ? "No coordination plans yet." : "No plans pending approval."}</p></div>`;
             return;
         }
         grid.innerHTML = plans.map(p => renderPlanCard(p)).join("");
@@ -483,9 +489,9 @@ function renderPlanCard(p) {
     const isDraft = p.status === "DRAFT";
     const cardCls = p.status === "APPROVED" ? "card-approved" : p.status === "REJECTED" ? "card-rejected" : "";
     const footer = isDraft
-        ? `<button class="btn-approve" onclick="approvePlan(${p.id})"><i class="fas fa-check"></i> Setujui</button>
-           <button class="btn-reject" onclick="rejectPlan(${p.id})"><i class="fas fa-times"></i> Tolak</button>`
-        : `<div class="action-done">${p.status === "APPROVED" ? "✓ Disetujui" : "✗ Ditolak"} oleh ${p.approved_by || "—"}</div>`;
+        ? `<button class="btn-approve" onclick="approvePlan(${p.id})"><i class="fas fa-check"></i> Approve</button>
+           <button class="btn-reject" onclick="rejectPlan(${p.id})"><i class="fas fa-times"></i> Reject</button>`
+        : `<div class="action-done">${p.status === "APPROVED" ? "✓ Approved" : "✗ Rejected"} by ${p.approved_by || "—"}</div>`;
 
     const actionRows = (p.action_priorities || []).map(a => `
       <tr>
@@ -498,7 +504,7 @@ function renderPlanCard(p) {
     return `<div class="item-card ${cardCls}" id="pcard-${p.id}">
       <div class="item-header">
         <div class="item-header-left">
-          <span class="type-badge type-plan">KOORDINASI</span>
+          <span class="type-badge type-plan">COORDINATION</span>
           ${magChip(p.magnitude)}
           <span class="gen-tag ${p.generated_by === 'llm' ? 'llm' : ''}">${p.generated_by === 'llm' ? 'LLM' : 'Fallback'}</span>
         </div>
@@ -510,10 +516,10 @@ function renderPlanCard(p) {
           <span><i class="fas fa-clock"></i> ${fmtTime(p.eq_timestamp)}</span>
         </div>
         <div class="resource-box">${(p.resource_mapping||"—").substring(0,220)}${(p.resource_mapping||"").length > 220 ? "…" : ""}</div>
-        ${actionRows ? `<div class="actions-label">Aksi Prioritas</div>
+        ${actionRows ? `<div class="actions-label">Priority Actions</div>
         <div style="overflow-x:auto;">
           <table class="action-table">
-            <thead><tr><th>Prior.</th><th>Aksi</th><th>Detail</th><th>Jam ke-</th></tr></thead>
+            <thead><tr><th>Prio.</th><th>Action</th><th>Description</th><th>Hour +</th></tr></thead>
             <tbody>${actionRows}</tbody>
           </table>
         </div>` : ""}
@@ -528,17 +534,17 @@ async function approvePlan(id) {
     try {
         const r = await fetch(`/api/approval/plan/${id}/approve`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER})});
         const j = await r.json();
-        if (j.status === "success") { showToast("Rencana koordinasi disetujui ✓", "success"); loadAll(); loadStats(); }
-        else showToast(j.message || "Gagal", "error");
+        if (j.status === "success") { showToast("Coordination plan approved ✓", "success"); loadAll(); loadStats(); }
+        else showToast(j.message || "Failed", "error");
     } catch(e) { showToast("Error: " + e.message, "error"); }
 }
 async function rejectPlan(id) {
-    const notes = prompt("Alasan penolakan (opsional):") || "";
+    const notes = prompt("Reason for rejection (optional):") || "";
     try {
         const r = await fetch(`/api/approval/plan/${id}/reject`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({officer_name:OFFICER,notes})});
         const j = await r.json();
-        if (j.status === "success") { showToast("Rencana koordinasi ditolak", "info"); loadAll(); loadStats(); }
-        else showToast(j.message || "Gagal", "error");
+        if (j.status === "success") { showToast("Coordination plan rejected", "info"); loadAll(); loadStats(); }
+        else showToast(j.message || "Failed", "error");
     } catch(e) { showToast("Error: " + e.message, "error"); }
 }
 
@@ -549,10 +555,10 @@ async function loadAudit() {
         const logs = j.data || [];
         const tbody = document.getElementById("auditBody");
         if (!logs.length) {
-            tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-clipboard"></i><p>Belum ada aktivitas.</p></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fas fa-clipboard"></i><p>No activity logged.</p></td></tr>`;
             return;
         }
-        const tableNames = {communication_drafts:"Draf Pesan",coordination_plans:"Rencana Koordinasi"};
+        const tableNames = {communication_drafts:"Message Draft",coordination_plans:"Coordination Plan"};
         tbody.innerHTML = logs.map(l => {
             const decCls = l.decision === "APPROVED" ? "decision-approved" : l.decision === "REJECTED" ? "decision-rejected" : "decision-edited";
             return `<tr>

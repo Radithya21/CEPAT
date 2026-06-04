@@ -1,6 +1,6 @@
 {% raw %}
 <!doctype html>
-<html lang="id">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1849,6 +1849,38 @@
             html.no-pwa-splash #pwa-splash {
                 display: none;
             }
+
+            .analytics-kpi-grid {
+                display: grid !important;
+                grid-template-columns: repeat(6, 1fr) !important;
+                gap: 8px !important;
+            }
+            @media (max-width: 900px) {
+                .analytics-kpi-grid {
+                    grid-template-columns: repeat(3, 1fr) !important;
+                }
+            }
+            @media (max-width: 550px) {
+                .analytics-kpi-grid {
+                    grid-template-columns: repeat(2, 1fr) !important;
+                }
+            }
+
+            .analytics-kpi-grid {
+                display: grid !important;
+                grid-template-columns: repeat(6, 1fr) !important;
+                gap: 8px !important;
+            }
+            @media (max-width: 900px) {
+                .analytics-kpi-grid {
+                    grid-template-columns: repeat(3, 1fr) !important;
+                }
+            }
+            @media (max-width: 550px) {
+                .analytics-kpi-grid {
+                    grid-template-columns: repeat(2, 1fr) !important;
+                }
+            }
         </style>
     </head>
     <body>
@@ -2279,10 +2311,10 @@
 
             const NAV = [
                 { k: "Monitor", ic: I.monitor },
-                { k: "Antrean", ic: I.coord, badgeKey: "pending" },
-                { k: "Laporan", ic: I.report },
-                { k: "Analitik", ic: I.chart },
-                { k: "Log", ic: I.log },
+                { k: "Queue", ic: I.coord, badgeKey: "pending" },
+                { k: "Reports", ic: I.report },
+                { k: "Analytics", ic: I.chart },
+                { k: "Logs", ic: I.log },
             ];
 
             /* ─ Clock ────────────────────────────────────────────────────────────── */
@@ -2293,20 +2325,20 @@
                     return () => clearInterval(t);
                 }, []);
                 const p = (n) => String(n).padStart(2, "0");
-                const DAYS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+                const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 const MONS = [
                     "Jan",
                     "Feb",
                     "Mar",
                     "Apr",
-                    "Mei",
+                    "May",
                     "Jun",
                     "Jul",
-                    "Agt",
+                    "Aug",
                     "Sep",
-                    "Okt",
+                    "Oct",
                     "Nov",
-                    "Des",
+                    "Dec",
                 ];
                 return (
                     <div className="h-clock">
@@ -2434,7 +2466,7 @@
                     : "M -";
                 return `<div style="font-family:'Inter',sans-serif;min-width:200px;">
               <div style="font-weight:800;font-size:1rem;color:#F85149;">${magTxt}</div>
-              <div style="font-weight:600;font-size:.82rem;color:var(--text-1);margin-top:3px;line-height:1.35;">${epicenter.label || "Episenter Gempa"}</div>
+              <div style="font-weight:600;font-size:.82rem;color:var(--text-1);margin-top:3px;line-height:1.35;">${epicenter.label || "Earthquake Epicenter"}</div>
               <div style="font-size:.74rem;color:var(--text-2);margin-top:4px;line-height:1.35;">${epicenter.sub || "-"}</div>
               <div style="font-size:.72rem;color:var(--text-2);margin-top:7px;font-family:'JetBrains Mono',monospace;">
                 ${fmtCoord(epicenter.lat, "N", "S")} · ${fmtCoord(epicenter.lon, "E", "W")}
@@ -3082,7 +3114,7 @@
                         {/* Overlay tags */}
                         <div className="map-tag">
                             <div className="m-dot"></div>
-                            <span className="m-tag-txt">EPISENTER AKTIF</span>
+                            <span className="m-tag-txt">ACTIVE EPICENTER</span>
                         </div>
                         <div className="map-hint">HOVER MARKERS</div>
                     </div>
@@ -3152,7 +3184,7 @@
                                     fontFamily: "var(--mono)",
                                 }}
                             >
-                                Memuat data...
+                                Loading data...
                             </div>
                         ) : (
                             <svg
@@ -4042,7 +4074,7 @@
                         <div className="modal-box">
                             <div className="modal-head">
                                 <span className="modal-title">
-                                    Edit Draf #{draft.id}
+                                    Edit Drafttt #{draft.id}
                                 </span>
                                 <button
                                     className="modal-close"
@@ -4075,7 +4107,7 @@
                                     onClick={onClose}
                                     type="button"
                                 >
-                                    Batal
+                                    Cancel
                                 </button>
                                 <button
                                     className="modal-btn save"
@@ -4132,7 +4164,7 @@
                                     className="ac-btn a"
                                     onClick={() => onAct(id, "app")}
                                 >
-                                    ✓ Setujui
+                                    ✓ Approve
                                 </button>
                                 <button
                                     className="ac-btn e"
@@ -4144,18 +4176,18 @@
                                     className="ac-btn r"
                                     onClick={() => onAct(id, "rej")}
                                 >
-                                    ✗ Tolak
+                                    ✗ Reject
                                 </button>
                             </div>
                         )}
                         {status === "app" && (
                             <div className="done-over app">
-                                <span>✓ DISETUJUI</span>
+                                <span>✓ APPROVED</span>
                             </div>
                         )}
                         {status === "rej" && (
                             <div className="done-over rej">
-                                <span>✗ DITOLAK</span>
+                                <span>✗ REJECTED</span>
                             </div>
                         )}
                     </div>
@@ -4253,7 +4285,7 @@
                                     {mag ? mag.toFixed(1) : "—"}
                                 </div>
                                 <div className="kpi-label">
-                                    Magnitudo Terdeteksi
+                                    Detected Magnitude
                                 </div>
                                 <div className="kpi-sub">
                                     {loc} · {ts}
@@ -4277,7 +4309,7 @@
                                     </span>
                                 </div>
                                 <div className="kpi-label">
-                                    Total Gempa Dicatat
+                                    Total Earthquakes Logged
                                 </div>
                                 <div className="kpi-sub">
                                     {stats ? stats.high_magnitude : 0} di atas
@@ -4299,7 +4331,7 @@
                                     Orchestrator Mode
                                 </div>
                                 <div className="kpi-sub">
-                                    Siklus:{" "}
+                                    Cycles:{" "}
                                     {stats && stats.agent
                                         ? stats.agent.cycles
                                         : 0}
@@ -4315,10 +4347,10 @@
                                     }
                                 </div>
                                 <div className="kpi-label">
-                                    Menunggu Persetujuan
+                                    Pending Approval
                                 </div>
                                 <div className="kpi-sub">
-                                    Draft komunikasi publik
+                                    Public communication drafts
                                 </div>
                             </div>
                         </div>
@@ -4353,7 +4385,7 @@
                                         >
                                             <div className="eq-panel-head">
                                                 <div className="eq-panel-title">
-                                                    Daftar Gempa
+                                                    Earthquake List
                                                 </div>
                                             </div>
                                             <div className="eq-panel-list">
@@ -4365,7 +4397,7 @@
                                                             color: "var(--text-3)",
                                                         }}
                                                     >
-                                                        Belum ada data gempa.
+                                                        No earthquake data yet.
                                                     </div>
                                                 ) : (
                                                     allEarthquakes.map((eq) => (
@@ -4411,7 +4443,7 @@
                                         <div className="map-tag">
                                             <div className="m-dot"></div>
                                             <span className="m-tag-txt">
-                                                EPISENTER AKTIF
+                                                ACTIVE EPICENTER
                                             </span>
                                         </div>
                                         <div className="map-hint">CLICK MARKER</div>
@@ -4429,7 +4461,7 @@
                                         </div>
                                         <div className="md-item">
                                             <div className="md-label">
-                                                Kedalaman
+                                                Depth
                                             </div>
                                             <div className="md-val">
                                                 {depth !== null
@@ -4439,7 +4471,7 @@
                                         </div>
                                         <div className="md-item">
                                             <div className="md-label">
-                                                Koordinat
+                                                Coordinates
                                             </div>
                                             <div className="md-val">
                                                 {lat !== null && lon !== null
@@ -4449,7 +4481,7 @@
                                         </div>
                                         <div className="md-item">
                                             <div className="md-label">
-                                                Diperbarui
+                                                Updated
                                             </div>
                                             <div
                                                 className="md-val"
@@ -4468,7 +4500,7 @@
                                         style={{ paddingBottom: 8 }}
                                     >
                                         <span className="card-head-title">
-                                            Frekuensi Gempa (24 Jam Terakhir)
+                                            Earthquake Frequency (Last 24 Hours)
                                         </span>
                                         <span
                                             className="card-head-meta"
@@ -4487,7 +4519,7 @@
                                                     display: "inline-block",
                                                 }}
                                             ></span>
-                                            DATA REAL · DIPERBARUI TIAP 5 MENIT
+                                            REAL DATA · UPDATED EVERY 5 MINUTES
                                         </span>
                                     </div>
                                     <EarthquakeChart theme={tweaks.uiTheme} />
@@ -4498,7 +4530,7 @@
                                         style={{ paddingBottom: 8 }}
                                     >
                                         <span className="card-head-title">
-                                            Aktivitas Agen
+                                            Agent Activity
                                         </span>
                                         <span className="card-head-meta">
                                             LIVE
@@ -4547,7 +4579,7 @@
                                                 gap: 7,
                                             }}
                                         >
-                                            Antrean Persetujuan
+                                            Approval Queue
                                             <span
                                                 className={`cpill${pendingDrafts.length === 0 ? " zero" : ""}`}
                                             >
@@ -4572,7 +4604,7 @@
                                                 }}
                                                 className="hover-opacity"
                                             >
-                                                Lihat Semua →
+                                                View All →
                                             </button>
                                         )}
                                     </div>
@@ -4585,8 +4617,7 @@
                                                     color: "var(--text-3)",
                                                 }}
                                             >
-                                                Tidak ada draf yang menunggu
-                                                persetujuan.
+                                                No drafts pending approval.
                                             </div>
                                         ) : (
                                             pendingDrafts.slice(0, 8).map((d) => (
@@ -4609,7 +4640,7 @@
                                     </div>
                                     <div className="audit">
                                         <div className="audit-ttl">
-                                            Aktivitas Terakhir
+                                            Recent Activity
                                         </div>
                                         <div className="audit-row">
                                             <span
@@ -4618,7 +4649,7 @@
                                                     color: "var(--text-3)",
                                                 }}
                                             >
-                                                Log lengkap di halaman Log.
+                                                Full logs on the Logs page.
                                             </span>
                                         </div>
                                     </div>
@@ -4695,13 +4726,13 @@
                                     color: isDraft ? "var(--blue)" : "var(--green)",
                                     borderRadius: 4, padding: "2px 6px", fontSize: 9, fontWeight: 700, textTransform: "uppercase",
                                 }}>
-                                    {isDraft ? "Draf" : "Rencana"}
+                                    {isDraft ? "Draft" : "Plan"}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                                         {isDraft
                                             ? (item.draft_type ? item.draft_type.replace(/_/g, " ").toUpperCase() : "DRAFT")
-                                            : "RENCANA KOORDINASI"}
+                                            : "COORDINATION PLAN"}
                                         <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: isUrgent ? "var(--red)" : "var(--text-2)", fontWeight: 700, background: isUrgent ? "rgba(248,81,73,0.05)" : "var(--surface-2)", border: `1px solid ${isUrgent ? "rgba(248,81,73,0.15)" : "var(--border)"}`, padding: "1px 5px", borderRadius: 3 }}>
                                             M {Number(item.magnitude).toFixed(1)}
                                         </span>
@@ -4725,7 +4756,7 @@
                             <div style={{ flex: 1, overflowY: "auto", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
                                 {isDraft ? (
                                     <div>
-                                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 6 }}>Konten Draf</div>
+                                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 6 }}>Draft Content</div>
                                         <div style={{ fontSize: 11, color: "var(--text-1)", lineHeight: 1.6, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 12px", fontFamily: item.draft_type === "technical" ? "var(--mono)" : "var(--sans)", whiteSpace: "pre-wrap" }}>
                                             {draftContents[item.id] || item.content || "—"}
                                         </div>
@@ -4738,7 +4769,7 @@
                                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                                         {item.resource_mapping && (
                                             <div>
-                                                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 4 }}>Pemetaan Sumber Daya</div>
+                                                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 4 }}>Resource Mapping</div>
                                                 <div style={{ fontSize: 11, color: "var(--text-1)", lineHeight: 1.5, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 12px", whiteSpace: "pre-wrap" }}>
                                                     {item.resource_mapping}
                                                 </div>
@@ -4746,7 +4777,7 @@
                                         )}
                                         {item.action_priorities && item.action_priorities.length > 0 && (
                                             <div>
-                                                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 4 }}>Aksi Prioritas</div>
+                                                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 4 }}>Priority Actions</div>
                                                 <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 6, overflow: "hidden" }}>
                                                     <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 80px", background: "var(--surface)", padding: "5px 10px", borderBottom: "1px solid var(--border)" }}>
                                                         <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase" }}>Tingkat</span>
@@ -4774,7 +4805,7 @@
                                             </div>
                                         )}
                                         <div style={{ fontSize: 9, color: "var(--text-3)", borderTop: "1px solid var(--border)", paddingTop: 6, display: "flex", justifyContent: "space-between" }}>
-                                            <span>Rencana Koordinasi</span>
+                                            <span>Coordination Plan</span>
                                             <span>Dibuat: {item.created_at ? new Date(item.created_at).toLocaleString("id-ID") : "—"}</span>
                                         </div>
                                     </div>
@@ -4792,7 +4823,7 @@
                                             onMouseLeave={e => e.currentTarget.style.background = "rgba(63,185,80,0.06)"}
                                         >
                                             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                            Setujui
+                                            Approve
                                         </button>
                                         {isDraft && (
                                             <button
@@ -4802,7 +4833,7 @@
                                                 onMouseLeave={e => e.currentTarget.style.background = "rgba(88,166,255,0.06)"}
                                             >
                                                 <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M8.5 1.5L10.5 3.5 4 10H2v-2L8.5 1.5Z" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                                Edit Draf
+                                                Edit Draftt
                                             </button>
                                         )}
                                         <button
@@ -4812,7 +4843,7 @@
                                             onMouseLeave={e => e.currentTarget.style.background = "rgba(248,81,73,0.06)"}
                                         >
                                             <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 2l8 8M10 2l-8 8" strokeLinecap="round"/></svg>
-                                            Tolak
+                                            Reject
                                         </button>
                                         <button 
                                             onClick={onClose} 
@@ -4820,7 +4851,7 @@
                                             onMouseEnter={e => e.currentTarget.style.borderColor = "var(--border-2)"}
                                             onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                                         >
-                                            Batal
+                                            Cancel
                                         </button>
                                     </div>
                                 ) : (
@@ -4831,7 +4862,7 @@
                                             ) : (
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                                             )}
-                                            {effectiveSt === "APPROVED" ? "Sudah disetujui" : "Sudah ditolak"}
+                                            {effectiveSt === "APPROVED" ? "Approved" : "Rejected"}
                                             {item.approved_by ? ` oleh ${item.approved_by}` : ""}
                                         </span>
                                         <button 
@@ -4915,9 +4946,9 @@
                 const filtered = allItems.filter(item => {
                     const st = getEffectiveSt(item);
                     if (filter === "Semua")    return true;
-                    if (filter === "Menunggu") return st === "DRAFT";
-                    if (filter === "Disetujui") return st === "APPROVED";
-                    if (filter === "Ditolak")  return st === "REJECTED";
+                    if (filter === "Pending") return st === "DRAFT";
+                    if (filter === "Approved") return st === "APPROVED";
+                    if (filter === "Rejected")  return st === "REJECTED";
                     return true;
                 });
 
@@ -4982,10 +5013,15 @@
                         <div className="antrean-sidebar">
                             <div className="antrean-sidebar-card">
                                 {/* Title area */}
-                                <div className="antrean-header">
-                                    <div className="antrean-title">Persetujuan</div>
-                                    <div className="antrean-count-chip">
-                                        {loading ? "Memuat..." : `${pendingDraftsCount} draf · ${pendingPlansCount} rencana`}
+                                <div className="antrean-header" style={{ flexDirection: "column", alignItems: "flex-start", gap: "8px" }}>
+                                    <div className="antrean-title">APPROVAL QUEUE</div>
+                                    <div style={{ display: "flex", gap: "6px", width: "100%" }}>
+                                        <div className="antrean-count-chip" style={{ flex: 1, textAlign: "center", background: "var(--blue-sub)", color: "var(--blue)", border: "1px solid rgba(88,166,255,0.15)", padding: "4px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "600" }}>
+                                            {loading ? "..." : `${pendingDraftsCount} Drafts`}
+                                        </div>
+                                        <div className="antrean-count-chip" style={{ flex: 1, textAlign: "center", background: "var(--green-sub)", color: "var(--green)", border: "1px solid rgba(63,185,80,0.15)", padding: "4px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "600" }}>
+                                            {loading ? "..." : `${pendingPlansCount} Plans`}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -5000,19 +5036,19 @@
                                             <rect x="3" y="16" width="7" height="5" rx="1" />
                                         </svg>
                                     )},
-                                    { key: "Menunggu", label: "Menunggu", count: pendingCount, icon: (color) => (
+                                    { key: "Pending", label: "Pending", count: pendingCount, icon: (color) => (
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
                                             <circle cx="12" cy="12" r="10" />
                                             <polyline points="12 6 12 12 16 14" />
                                         </svg>
                                     )},
-                                    { key: "Disetujui", label: "Disetujui", count: approvedCount, icon: (color) => (
+                                    { key: "Approved", label: "Approved", count: approvedCount, icon: (color) => (
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
                                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                             <polyline points="22 4 12 14.01 9 11.01" />
                                         </svg>
                                     )},
-                                    { key: "Ditolak", label: "Ditolak", count: rejectedCount, icon: (color) => (
+                                    { key: "Rejected", label: "Rejected", count: rejectedCount, icon: (color) => (
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
                                             <circle cx="12" cy="12" r="10" />
                                             <line x1="15" y1="9" x2="9" y2="15" />
@@ -5022,7 +5058,7 @@
                                 ].map(s => {
                                     const isActive = filter === s.key;
                                     const iconColor = isActive 
-                                        ? (s.key === "Menunggu" ? "var(--orange)" : s.key === "Disetujui" ? "var(--green)" : s.key === "Ditolak" ? "var(--red)" : "var(--text-1)") 
+                                        ? (s.key === "Pending" ? "var(--orange)" : s.key === "Approved" ? "var(--green)" : s.key === "Rejected" ? "var(--red)" : "var(--text-1)") 
                                         : "var(--text-2)";
                                     return (
                                         <div
@@ -5063,7 +5099,7 @@
                             {/* Top Bar Location Breadcrumb */}
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, height: 20 }}>
                                 <div style={{ fontSize: 11, fontWeight: 500, color: "var(--text-2)", display: "flex", alignItems: "center", gap: 4 }}>
-                                    <span style={{ color: "var(--text-3)" }}>Antrean</span>
+                                    <span style={{ color: "var(--text-3)" }}>Queue</span>
                                     <span style={{ color: "var(--text-3)" }}>/</span>
                                     <span>{filter}</span>
                                     <span style={{
@@ -5082,7 +5118,7 @@
                             {/* Items */}
                             {loading ? (
                                 <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--r)", padding: "40px 0", textAlign: "center", color: "var(--text-3)", fontSize: 11 }}>
-                                    Memuat data...
+                                    Loading data...
                                 </div>
                             ) : filtered.length === 0 ? (
                                 <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--r)", padding: "48px 0", textAlign: "center", color: "var(--text-3)" }}>
@@ -5092,7 +5128,7 @@
                                         <line x1="9" y1="13" x2="15" y2="13"/>
                                         <line x1="9" y1="17" x2="13" y2="17"/>
                                     </svg>
-                                    <div style={{ fontSize: 11, fontWeight: 500 }}>Tidak ada item</div>
+                                    <div style={{ fontSize: 11, fontWeight: 500 }}>No items</div>
                                     <div style={{ fontSize: 10, marginTop: 2, opacity: 0.7 }}>untuk filter "{filter}"</div>
                                 </div>
                             ) : (
@@ -5128,7 +5164,7 @@
                                                                 {group.location}
                                                             </div>
                                                             <div className="ag-sub">
-                                                                {fmtTime(group.latest)} · {draftsCount} draf · {plansCount} rencana
+                                                                {fmtTime(group.latest)} · {draftsCount} drafts · {plansCount} plans
                                                             </div>
                                                         </div>
                                                     </div>
@@ -5185,8 +5221,8 @@
                                                         );
 
                                                         const typeLabel = isDraft
-                                                            ? (DRAFT_LABELS[item.draft_type] || "Draf Komunikasi")
-                                                            : "Rencana Koordinasi";
+                                                            ? (DRAFT_LABELS[item.draft_type] || "Communication Draft")
+                                                            : "Coordination Plan";
 
                                                         return (
                                                             <div
@@ -5248,7 +5284,7 @@
                                                                             border: `1px solid ${isDraft ? "rgba(88,166,255,0.12)" : "rgba(63,185,80,0.12)"}`,
                                                                             letterSpacing: "0.03em",
                                                                         }}>
-                                                                            {isDraft ? "Draf" : "Rencana"}
+                                                                            {isDraft ? "Draft" : "Plan"}
                                                                         </span>
                                                                     </div>
 
@@ -5378,7 +5414,7 @@
                     navigator.clipboard
                         .writeText(text)
                         .then(() => showLaporanToast("Disalin ke clipboard!"))
-                        .catch(() => showLaporanToast("Gagal menyalin"));
+                        .catch(() => showLaporanToast("Failed to copy"));
                 };
                 const downloadPdf = async (eqId) => {
                     if (pdfDownloading) return;
@@ -5392,13 +5428,13 @@
                             }
                         });
                         if (!tokenResponse.ok) {
-                            showLaporanToast("Gagal menyiapkan unduhan PDF");
+                            showLaporanToast("Failed to prepare PDF download");
                             setPdfDownloading(false);
                             return;
                         }
                         const j = await tokenResponse.json();
                         if (j.status !== "success" || !j.token) {
-                            showLaporanToast("Gagal memperoleh token unduhan");
+                            showLaporanToast("Failed to get download token");
                             setPdfDownloading(false);
                             return;
                         }
@@ -5413,7 +5449,7 @@
                         showLaporanToast("Unduhan PDF dimulai!");
                     } catch (err) {
                         console.error("Download error:", err);
-                        showLaporanToast("Gagal mengunduh PDF");
+                        showLaporanToast("Failed to download PDF");
                     }
                     setPdfDownloading(false);
                 };
@@ -5663,7 +5699,7 @@
                                         color: "var(--text-1)",
                                     }}
                                 >
-                                    Gempa Signifikan
+                                    Significant Earthquakes
                                 </div>
                                 <div
                                     style={{
@@ -5685,7 +5721,7 @@
                                             fontSize: 11,
                                         }}
                                     >
-                                        Tidak ada gempa M≥5
+                                        No earthquakes M≥5
                                     </div>
                                 ) : (
                                     majorEqs.map((eq) => (
@@ -5783,10 +5819,10 @@
                                         </svg>
                                     </div>
                                     <div className="laporan-empty-title">
-                                        Pilih gempa di sisi kiri
+                                        Select an earthquake on the left
                                     </div>
                                     <div className="laporan-empty-sub">
-                                        Laporan lengkap akan tampil di sini
+                                        Full report will be displayed here
                                         setelah memilih salah satu kejadian.
                                     </div>
                                 </div>
@@ -5826,7 +5862,7 @@
                                                         }}
                                                     >
                                                         {selectedEq.timestamp} ·
-                                                        Kedalaman:{" "}
+                                                        Depth:{" "}
                                                         {selectedEq.depth_km} km
                                                     </div>
                                                 </div>
@@ -5850,7 +5886,7 @@
                                                                 ? 0.7
                                                                 : 1,
                                                     }}
-                                                    title="Unduh laporan PDF"
+                                                    title="Download PDF report"
                                                 >
                                                     {pdfDownloading ? (
                                                         <span style={{ width: 10, height: 10, border: "2px solid var(--text-2)", borderRightColor: "transparent", borderRadius: "50%", display: "inline-block", animation: "spin 0.75s linear infinite" }}></span>
@@ -5868,7 +5904,7 @@
                                         {[
                                             ["sitrep", I.report, "Situasi"],
                                             ["komunikasi", I.comm, "Komunikasi"],
-                                            ["koordinasi", I.coord, "Koordinasi"],
+                                            ["koordinasi", I.coord, "Coordination"],
                                         ].map(([k, icon, label]) => (
                                             <button
                                                 key={k}
@@ -5916,7 +5952,7 @@
                                                     padding: 20,
                                                 }}
                                             >
-                                                Memuat data...
+                                                Loading data...
                                             </div>
                                         )}
                                         {!loading &&
@@ -6096,7 +6132,7 @@
                                                                         }}
                                                                     >
                                                                         Area
-                                                                        Terdampak
+                                                                        Affected
                                                                     </div>
                                                                     <div
                                                                         style={{
@@ -6355,7 +6391,7 @@
                                                                     "20px 0",
                                                             }}
                                                         >
-                                                            Rencana koordinasi
+                                                            Coordination Plan
                                                             belum tersedia.
                                                         </div>
                                                     ) : (
@@ -6565,7 +6601,7 @@
                                                     padding: 20,
                                                 }}
                                             >
-                                                Gagal memuat laporan. Data
+                                                Failed to load report. Data
                                                 mungkin belum tersedia.
                                             </div>
                                         )}
@@ -6697,7 +6733,7 @@
                                         letterSpacing: "-0.01em"
                                     }}
                                 >
-                                    Audit Log & Aktivitas
+                                    Audit Log & Activity
                                 </div>
                                 <div
                                     style={{
@@ -6706,7 +6742,7 @@
                                         marginTop: 2,
                                     }}
                                 >
-                                    Riwayat audit tindakan, keputusan, dan approval operator
+                                    Audit history of actions, decisions, and operator approvals
                                 </div>
                             </div>
                             <span
@@ -6747,7 +6783,7 @@
                                         {[
                                             ["ALL", "Semua"],
                                             ["APPROVE", "Persetujuan"],
-                                            ["REJECT", "Penolakan"]
+                                            ["REJECT", "Rejection"]
                                         ].map(([k, label]) => (
                                             <button
                                                 key={k}
@@ -6777,7 +6813,7 @@
                                         </svg>
                                         <input
                                             type="text"
-                                            placeholder="Cari operator, catatan, table..."
+                                            placeholder="Search operator, notes, table..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             style={{
@@ -6809,7 +6845,7 @@
                                 >
                                     {loading ? (
                                         <div style={{ padding: 30, textAlign: "center", color: "var(--text-2)", fontSize: 11 }}>
-                                            Memuat audit log...
+                                            Loading audit log...
                                         </div>
                                     ) : filteredLogs.length === 0 ? (
                                         <div style={{ padding: 40, textAlign: "center", color: "var(--text-2)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
@@ -6818,7 +6854,7 @@
                                                 <line x1="12" y1="16" x2="12" y2="12" />
                                                 <line x1="12" y1="8" x2="12" y2="8" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>
-                                            <div style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Aktivitas tidak ditemukan</div>
+                                            <div style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Activity not found</div>
                                             <div style={{ fontSize: 10, color: "var(--text-3)" }}>Coba ubah filter atau kueri pencarian Anda</div>
                                         </div>
                                     ) : (
@@ -6853,9 +6889,9 @@
                                                 // Parse Item Type
                                                 let readableItemTable = "Item";
                                                 if (log.item_table === "communication_drafts") {
-                                                    readableItemTable = "Draf Komunikasi";
+                                                    readableItemTable = "Communication Draft";
                                                 } else if (log.item_table === "coordination_plans") {
-                                                    readableItemTable = "Rencana Koordinasi";
+                                                    readableItemTable = "Coordination Plan";
                                                 } else if (log.item_table) {
                                                     readableItemTable = log.item_table;
                                                 }
@@ -6948,7 +6984,7 @@
                                                                 {log.notes ? (
                                                                     <span>{log.notes}</span>
                                                                 ) : (
-                                                                    <span style={{ fontStyle: "italic", color: "var(--text-3)" }}>Tidak ada catatan khusus</span>
+                                                                    <span style={{ fontStyle: "italic", color: "var(--text-3)" }}>No custom notes</span>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -6965,7 +7001,7 @@
                                 {/* Sidebar Card: Summary ratio */}
                                 <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "14px 16px" }}>
                                     <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-1)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-                                        Ringkasan Aktivitas
+                                        Activity Summary
                                     </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                         {/* Ratio Horizontal Visual Bars */}
@@ -6981,7 +7017,7 @@
 
                                         <div>
                                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text-2)", marginBottom: 4 }}>
-                                                <span>Penolakan</span>
+                                                <span>Rejection</span>
                                                 <span style={{ fontWeight: 600, color: "var(--red)" }}>{stats.rejected} ({stats.total ? Math.round(stats.rejected/stats.total*100) : 0}%)</span>
                                             </div>
                                             <div style={{ height: 6, background: "var(--surface-2)", borderRadius: 3, overflow: "hidden" }}>
@@ -6993,13 +7029,13 @@
                                     </div>
                                 </div>
 
-                                {/* Sidebar Card: Operator Teraktif */}
+                                {/* Sidebar Card: Most Active Operators */}
                                 <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "14px 16px" }}>
                                     <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-1)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                                        Operator Teraktif
+                                        Most Active Operators
                                     </div>
                                     {topOperators.length === 0 ? (
-                                        <div style={{ fontSize: 11, color: "var(--text-3)", fontStyle: "italic", textAlign: "center", padding: "8px 0" }}>Belum ada operator</div>
+                                        <div style={{ fontSize: 11, color: "var(--text-3)", fontStyle: "italic", textAlign: "center", padding: "8px 0" }}>No operators yet</div>
                                     ) : (
                                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                             {topOperators.map((op, idx) => (
@@ -7048,7 +7084,7 @@
                 // SVG Line Chart for monthly trend
                 const MonthlyChart = () => {
                     if (monthly.length === 0) return (
-                        <div style={{ padding: 40, textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>Belum ada data bulanan</div>
+                        <div style={{ padding: 40, textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>No monthly data yet</div>
                     );
                     const W = 580, H = 160, PAD = { top: 16, right: 16, bottom: 32, left: 40 };
                     const maxTotal = Math.max(...monthly.map(m => m.total), 1);
@@ -7099,43 +7135,64 @@
                     );
                 };
 
-                // Heatmap circles on Indonesia bounding box
+                // Heatmap Leaflet Map
                 const HeatmapViz = () => {
-                    if (heatmap.length === 0) return (
-                        <div style={{ padding: 40, textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>Belum ada data heatmap</div>
-                    );
-                    const W = 580, H = 220;
-                    const LON_MIN = 94, LON_MAX = 142, LAT_MIN = 8, LAT_MAX = -12;
-                    const toX = lon => ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * W;
-                    const toY = lat => ((LAT_MIN - lat) / (LAT_MIN - LAT_MAX)) * H;
-                    const maxCount = Math.max(...heatmap.map(d => d.count), 1);
+                    const mapRef = useRef(null);
+                    const [mapInstance, setMapInstance] = useState(null);
+
+                    useEffect(() => {
+                        if (!mapRef.current || typeof L === "undefined") return;
+                        try {
+                            const map = L.map(mapRef.current, {
+                                zoomControl: true,
+                                attributionControl: false,
+                            }).setView([-2.5, 118.0], 5);
+                            L.tileLayer(TILE_URL, TILE_OPTS).addTo(map);
+                            setMapInstance(map);
+                            
+                            return () => {
+                                map.remove();
+                            };
+                        } catch (e) {
+                            print("Heatmap map init error:", e);
+                        }
+                    }, []);
+
+                    useEffect(() => {
+                        if (!mapInstance || heatmap.length === 0) return;
+                        
+                        const layers = [];
+                        const maxCount = Math.max(...heatmap.map(d => d.count), 1);
+                        
+                        heatmap.forEach(d => {
+                            const intensity = d.count / maxCount;
+                            const r255 = Math.round(248 * intensity);
+                            
+                            const radius = Math.max(50000, Math.min(250000, (d.count / maxCount) * 200000 + 50000));
+                            
+                            const circle = L.circle([d.lat_grid, d.lon_grid], {
+                                radius: radius,
+                                fillColor: `rgb(${r255}, ${Math.round(81*(1-intensity)+34*intensity)}, ${Math.round(73*(1-intensity))})`,
+                                fillOpacity: 0.55,
+                                color: `rgb(${r255}, ${Math.round(81*(1-intensity))}, 73)`,
+                                weight: 1
+                            }).addTo(mapInstance);
+                            
+                            circle.bindPopup(`
+                                <strong>Grid Area:</strong> ${d.lat_grid.toFixed(1)}°, ${d.lon_grid.toFixed(1)}°<br/>
+                                <strong>Earthquakes:</strong> ${d.count}<br/>
+                                <strong>Max Magnitude:</strong> M${Number(d.max_mag).toFixed(1)}
+                            `);
+                            layers.push(circle);
+                        });
+                        
+                        return () => {
+                            layers.forEach(l => l.remove());
+                        };
+                    }, [mapInstance, heatmap]);
+
                     return (
-                        <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ background: "var(--bg)", borderRadius: 4 }}>
-                            {/* Indonesia outline (simplified rectangle guides) */}
-                            <rect x={toX(95)} y={toY(6)} width={toX(141) - toX(95)} height={toY(-10) - toY(6)} fill="rgba(255,255,255,0.02)" stroke="var(--border)" strokeWidth="0.5"/>
-                            {/* Heatmap circles */}
-                            {heatmap.map((d, i) => {
-                                const x = toX(d.lon_grid);
-                                const y = toY(d.lat_grid);
-                                const r = Math.max(4, Math.min(20, (d.count / maxCount) * 20 + 4));
-                                const intensity = d.count / maxCount;
-                                const r255 = Math.round(248 * intensity);
-                                const g255 = Math.round(81 * (1 - intensity) + 153 * intensity);
-                                const b255 = Math.round(73 * (1 - intensity));
-                                return (
-                                    <circle key={i} cx={x} cy={y} r={r}
-                                        fill={`rgba(${r255},${Math.round(81*(1-intensity)+34*intensity)},${Math.round(73*(1-intensity))},0.65)`}
-                                        stroke={`rgba(${r255},${Math.round(81*(1-intensity))},73,0.8)`}
-                                        strokeWidth="0.5">
-                                        <title>{d.lat_grid}°, {d.lon_grid}° — {d.count} gempa, max M{Number(d.max_mag).toFixed(1)}</title>
-                                    </circle>
-                                );
-                            })}
-                            {/* Labels */}
-                            <text x="4" y="10" fontSize="8" fill="var(--text-3)">N 8°</text>
-                            <text x="4" y={H - 4} fontSize="8" fill="var(--text-3)">S 12°</text>
-                            <text x="4" y={H / 2} fontSize="8" fill="var(--text-3)">Ekuator</text>
-                        </svg>
+                        <div ref={mapRef} style={{ height: 260, borderRadius: 4, background: "var(--bg)", border: "1px solid var(--border)" }} />
                     );
                 };
 
@@ -7150,30 +7207,30 @@
                 return (
                     <div style={{ maxWidth: 860, margin: "0 auto" }}>
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>Analitik Gempa</div>
-                            <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>Statistik dan visualisasi historis data gempa CEPAT</div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>Earthquake Analytics</div>
+                            <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>CEPAT historical earthquake statistics and visualizations</div>
                         </div>
 
                         {loading ? (
-                            <div style={{ padding: 60, textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>Memuat data analitik...</div>
+                            <div style={{ padding: 60, textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>Loading analytics data...</div>
                         ) : (
                             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                                 {/* Summary KPI cards */}
                                 {summary && (
-                                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                        <StatCard label="Total Gempa" value={summary.total_earthquakes} sub="Seluruh database"/>
-                                        <StatCard label="Gempa M≥5" value={summary.major_earthquakes} color="var(--red)" sub={`${Math.round(summary.major_earthquakes/Math.max(summary.total_earthquakes,1)*100)}% dari total`}/>
-                                        <StatCard label="Rata-rata Mag" value={summary.avg_magnitude ? summary.avg_magnitude.toFixed(2) : "—"} color="var(--orange)" sub="Semua gempa"/>
-                                        <StatCard label="Tertinggi" value={summary.max_magnitude ? `M${summary.max_magnitude.toFixed(1)}` : "—"} color="var(--red)" sub="Magnitudo maksimum"/>
-                                        <StatCard label="Pipeline Done" value={`${summary.pipeline_ratio}%`} color="var(--green)" sub={`${summary.pipeline_done} gempa diproses`}/>
-                                        <StatCard label="Draf Disetujui" value={`${summary.approval_ratio}%`} color="var(--blue)" sub={`${summary.approved_drafts}/${summary.total_drafts} draf`}/>
+                                    <div className="analytics-kpi-grid">
+                                        <StatCard label="Total Earthquakes" value={summary.total_earthquakes} sub="Full database"/>
+                                        <StatCard label="M≥5 Earthquakes" value={summary.major_earthquakes} color="var(--red)" sub={`${Math.round(summary.major_earthquakes/Math.max(summary.total_earthquakes,1)*100)}% of total`}/>
+                                        <StatCard label="Avg Magnitude" value={summary.avg_magnitude ? summary.avg_magnitude.toFixed(2) : "—"} color="var(--orange)" sub="All earthquakes"/>
+                                        <StatCard label="Highest" value={summary.max_magnitude ? `M${summary.max_magnitude.toFixed(1)}` : "—"} color="var(--red)" sub="Maximum magnitude"/>
+                                        <StatCard label="Pipeline Done" value={`${summary.pipeline_ratio}%`} color="var(--green)" sub={`${summary.pipeline_done} earthquakes processed`}/>
+                                        <StatCard label="Approved Drafts" value={`${summary.approval_ratio}%`} color="var(--blue)" sub={`${summary.approved_drafts}/${summary.total_drafts} drafts`}/>
                                     </div>
                                 )}
 
                                 {/* Monthly trend chart */}
                                 <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "14px 16px" }}>
                                     <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)", marginBottom: 12 }}>
-                                        Tren Gempa 12 Bulan Terakhir
+                                        Earthquake Trend (Last 12 Months)
                                         <span style={{ fontSize: 10, fontWeight: 400, color: "var(--text-3)", marginLeft: 8 }}>Total (garis merah) · M≥5 (batang merah)</span>
                                     </div>
                                     <MonthlyChart/>
@@ -7182,11 +7239,11 @@
                                 {/* Heatmap */}
                                 <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, padding: "14px 16px" }}>
                                     <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)", marginBottom: 6 }}>
-                                        Distribusi Geografis Gempa
-                                        <span style={{ fontSize: 10, fontWeight: 400, color: "var(--text-3)", marginLeft: 8 }}>Ukuran lingkaran = frekuensi · Warna = intensitas (merah = tinggi)</span>
+                                        Geographical Earthquake Distribution
+                                        <span style={{ fontSize: 10, fontWeight: 400, color: "var(--text-3)", marginLeft: 8 }}>Circle size = frequency · Color = intensity (red = high)</span>
                                     </div>
                                     <div style={{ marginBottom: 8, fontSize: 10, color: "var(--text-3)" }}>
-                                        {heatmap.length} zona aktif · Top 5:{" "}
+                                        {heatmap.length} active zones · Top 5:{" "}
                                         {heatmap.slice(0, 5).map(d => `${d.lat_grid}°,${d.lon_grid}° (${d.count})`).join(" · ")}
                                     </div>
                                     <HeatmapViz/>
@@ -7195,12 +7252,12 @@
                                 {/* Monthly table */}
                                 {monthly.length > 0 && (
                                     <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 6, overflow: "hidden" }}>
-                                        <div style={{ padding: "10px 14px 8px", fontSize: 12, fontWeight: 600, color: "var(--text-1)", borderBottom: "1px solid var(--border)" }}>Data Bulanan</div>
+                                        <div style={{ padding: "10px 14px 8px", fontSize: 12, fontWeight: 600, color: "var(--text-1)", borderBottom: "1px solid var(--border)" }}>Monthly Data</div>
                                         <div style={{ overflowX: "auto" }}>
                                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
                                                 <thead>
                                                     <tr style={{ background: "var(--surface-2)" }}>
-                                                        {["Bulan","Total","M≥5","Rata-rata Mag","Tertinggi"].map(h => (
+                                                        {["Month","Total","M≥5","Avg Mag","Highest"].map(h => (
                                                             <th key={h} style={{ padding: "6px 12px", textAlign: h === "Bulan" ? "left" : "right", fontSize: 10, fontWeight: 600, color: "var(--text-3)", borderBottom: "1px solid var(--border)" }}>{h}</th>
                                                         ))}
                                                     </tr>
@@ -7355,7 +7412,7 @@
 
                     socket.on("new_earthquake", (data) => {
                         console.log("[WebSocket] Gempa baru:", data);
-                        showToast(`🚨 GEMPA BARU: M${Number(data.magnitude).toFixed(1)} - ${data.location_desc}`);
+                        showToast(`🚨 NEW EARTHQUAKE: M${Number(data.magnitude).toFixed(1)} - ${data.location_desc}`);
                         // Play alert sound
                         try {
                             const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-500.wav");
@@ -7367,13 +7424,13 @@
 
                     socket.on("draft_pending", (data) => {
                         console.log("[WebSocket] Draf pending:", data);
-                        showToast(`✉️ Draf baru siap disetujui (Gempa ID #${data.earthquake_id})`);
+                        showToast(`✉️ New draft ready for approval (Earthquake ID #${data.earthquake_id})`);
                         fetchData();
                     });
 
                     socket.on("pipeline_done", (data) => {
-                        console.log("[WebSocket] Pipeline selesai:", data);
-                        showToast(`✓ Analisis gempa M${Number(data.magnitude).toFixed(1)} selesai`);
+                        console.log("[WebSocket] Pipeline completed:", data);
+                        showToast(`✓ Earthquake analysis M${Number(data.magnitude).toFixed(1)} completed`);
                         fetchData();
                     });
 
@@ -7426,7 +7483,7 @@
                 };
                 const onEditSaved = (id, newContent) => {
                     setDraftContents((p) => ({ ...p, [id]: newContent }));
-                    showToast("Draf berhasil diedit");
+                    showToast("Draft successfully edited");
                     const now = new Date();
                     const ts = [
                         now.getHours(),
@@ -7440,7 +7497,7 @@
                             ts,
                             msg: (
                                 <span>
-                                    Draft #{id} <b>diedit</b>
+                                    Draft #{id} <b>edited</b>
                                 </span>
                             ),
                         },
@@ -7467,7 +7524,7 @@
                                 <span>
                                     Draft #{id}{" "}
                                     <b>
-                                        {st === "app" ? "disetujui" : "ditolak"}
+                                        {st === "app" ? "approved" : "rejected"}
                                     </b>
                                 </span>
                             ),
@@ -7544,18 +7601,18 @@
                                     <div className="status-pill em">
                                         <div className="sp-dot r"></div>
                                         <span className="status-text-desktop">
-                                            SIAGA AKTIF — Gempa{" "}
+                                            ACTIVE STANDBY — Earthquake{" "}
                                             {mag ? `M${mag.toFixed(1)}` : "M?"}{" "}
                                             {loc}
                                         </span>
                                         <span className="status-text-mobile">
-                                            SIAGA AKTIF
+                                            ACTIVE STANDBY
                                         </span>
                                     </div>
                                 ) : (
                                     <div className="status-pill ok">
                                         <div className="sp-dot g"></div>
-                                        <span>Sistem Normal</span>
+                                        <span>System Normal</span>
                                     </div>
                                 )}
                             </div>
@@ -7628,7 +7685,7 @@
                                                             <circle cx="7" cy="10" r="0.5" fill="var(--orange)"/>
                                                         </svg>
                                                         <div>
-                                                            <div style={{ fontSize: 11, color: "var(--text-1)", fontWeight: 500 }}>{newAlerts} gempa baru belum diakui</div>
+                                                            <div style={{ fontSize: 11, color: "var(--text-1)", fontWeight: 500 }}>{newAlerts} new earthquakes not acknowledged</div>
                                                             <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1 }}>Buka halaman Monitor</div>
                                                         </div>
                                                     </div>
@@ -7636,7 +7693,7 @@
                                                 {pendingCount > 0 && (
                                                     <div
                                                         style={{ padding: "9px 12px", cursor: "pointer", display: "flex", gap: 8, alignItems: "flex-start" }}
-                                                        onClick={() => { setNav("Antrean"); setNotifOpen(false); }}
+                                                        onClick={() => { setNav("Queue"); setNotifOpen(false); }}
                                                         onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
                                                         onMouseLeave={e => e.currentTarget.style.background = ""}
                                                     >
@@ -7647,14 +7704,14 @@
                                                             <line x1="4.5" y1="9.5" x2="7.5" y2="9.5" strokeLinecap="round"/>
                                                         </svg>
                                                         <div>
-                                                            <div style={{ fontSize: 11, color: "var(--text-1)", fontWeight: 500 }}>{pendingCount} draf menunggu persetujuan</div>
-                                                            <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1 }}>Buka halaman Antrean</div>
+                                                            <div style={{ fontSize: 11, color: "var(--text-1)", fontWeight: 500 }}>{pendingCount} drafts pending approval</div>
+                                                            <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1 }}>Open Queue page</div>
                                                         </div>
                                                     </div>
                                                 )}
                                                 {totalBadge === 0 && (
                                                     <div style={{ padding: "14px 12px", textAlign: "center", color: "var(--text-3)", fontSize: 11 }}>
-                                                        Tidak ada notifikasi baru
+                                                        No new notifications
                                                     </div>
                                                 )}
                                             </div>
@@ -7669,7 +7726,7 @@
                                 >
                                     <div
                                         className="h-av"
-                                        title={`Login sebagai: ${operator || "?"} · Klik untuk logout`}
+                                        title={`Logged in as: ${operator || "?"} · Click to logout`}
                                     >
                                         {operator
                                             ? operator
@@ -7684,7 +7741,7 @@
                         {/* CONTENT */}
                         <main
                             className={`content${
-                                nav === "Antrean" ? " content-antrean" : ""
+                                nav === "Queue" ? " content-antrean" : ""
                             }`}
                         >
                             {nav === "Monitor" && (
@@ -7706,7 +7763,7 @@
                                     setNav={setNav}
                                 />
                             )}
-                            {nav === "Antrean" && (
+                            {nav === "Queue" && (
                                 <PageAntrean
                                     pendingDrafts={pendingDrafts}
                                     apprLocal={apprLocal}
@@ -7716,9 +7773,9 @@
                                     fetchData={fetchData}
                                 />
                             )}
-                            {nav === "Laporan" && <PageLaporan />}
-                            {nav === "Analitik" && <PageAnalitik />}
-                            {nav === "Log" && <PageLog />}
+                            {nav === "Reports" && <PageLaporan />}
+                            {nav === "Analytics" && <PageAnalitik />}
+                            {nav === "Logs" && <PageLog />}
                             {false && (
                                 <>
                                     <div className="kpi-row">
@@ -7728,7 +7785,7 @@
                                                 {mag ? mag.toFixed(1) : "—"}
                                             </div>
                                             <div className="kpi-label">
-                                                Magnitudo Terdeteksi
+                                                Detected Magnitude
                                             </div>
                                             <div className="kpi-sub">
                                                 {loc} · {ts}
@@ -7756,7 +7813,7 @@
                                                 </span>
                                             </div>
                                             <div className="kpi-label">
-                                                Total Gempa Dicatat
+                                                Total Earthquakes Logged
                                             </div>
                                             <div className="kpi-sub">
                                                 {stats
@@ -7780,7 +7837,7 @@
                                                 Orchestrator Mode
                                             </div>
                                             <div className="kpi-sub">
-                                                Siklus:{" "}
+                                                Cycles:{" "}
                                                 {stats && stats.agent
                                                     ? stats.agent.cycles
                                                     : 0}
@@ -7796,10 +7853,10 @@
                                                 }
                                             </div>
                                             <div className="kpi-label">
-                                                Menunggu Persetujuan
+                                                Pending Approval
                                             </div>
                                             <div className="kpi-sub">
-                                                Draft komunikasi publik
+                                                Public communication drafts
                                             </div>
                                         </div>
                                     </div>
@@ -7818,7 +7875,7 @@
                                                     <div className="map-tag">
                                                         <div className="m-dot"></div>
                                                         <span className="m-tag-txt">
-                                                            EPISENTER AKTIF
+                                                            ACTIVE EPICENTER
                                                         </span>
                                                     </div>
                                                     <div className="map-hint">
@@ -7838,7 +7895,7 @@
                                                     </div>
                                                     <div className="md-item">
                                                         <div className="md-label">
-                                                            Kedalaman
+                                                            Depth
                                                         </div>
                                                         <div className="md-val">
                                                             {depth !== null
@@ -7848,7 +7905,7 @@
                                                     </div>
                                                     <div className="md-item">
                                                         <div className="md-label">
-                                                            Koordinat
+                                                            Coordinates
                                                         </div>
                                                         <div className="md-val">
                                                             {lat !== null &&
@@ -7859,7 +7916,7 @@
                                                     </div>
                                                     <div className="md-item">
                                                         <div className="md-label">
-                                                            Diperbarui
+                                                            Updated
                                                         </div>
                                                         <div
                                                             className="md-val"
@@ -7920,7 +7977,7 @@
                                                     style={{ paddingBottom: 8 }}
                                                 >
                                                     <span className="card-head-title">
-                                                        Aktivitas Agen
+                                                        Agent Activity
                                                     </span>
                                                     <span className="card-head-meta">
                                                         LIVE
@@ -7979,7 +8036,7 @@
                                                             gap: 7,
                                                         }}
                                                     >
-                                                        Antrean Persetujuan
+                                                        Approval Queue
                                                         <span
                                                             className={`cpill${pendingDrafts.length === 0 ? " zero" : ""}`}
                                                         >
@@ -8005,7 +8062,7 @@
                                                             }}
                                                             className="hover-opacity"
                                                         >
-                                                            Lihat Semua →
+                                                            View All →
                                                         </button>
                                                     )}
                                                 </div>
@@ -8058,7 +8115,7 @@
                                                 </div>
                                                 <div className="audit">
                                                     <div className="audit-ttl">
-                                                        Aktivitas Terakhir
+                                                        Recent Activity
                                                     </div>
                                                     {logs.length === 0 ? (
                                                         <div className="audit-row">
@@ -8121,7 +8178,7 @@
                             })}
                         </nav>
 
-                        {/* Modal Edit Draf */}
+                        {/* Modal Edit Draftt */}
                         {editModal && (
                             <EditModal
                                 draft={editModal}
