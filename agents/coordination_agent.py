@@ -13,8 +13,8 @@ import logging
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import GEMINI_API_KEY, GEMINI_COORD_MODEL
 from database.db_handler import DatabaseHandler
+from utils.llm_client import LLMClient
 
 logger = logging.getLogger("CoordinationAgent")
 
@@ -115,18 +115,9 @@ class CoordinationAgent:
 
     def __init__(self, db_handler: DatabaseHandler = None):
         self.db = db_handler or DatabaseHandler()
-        self._model = None
+        self._llm = LLMClient()
         self._prompt_template = _load_prompt("coordination_plan.txt")
-
-        if GEMINI_API_KEY:
-            try:
-                from google import genai
-                self._model = genai.Client(api_key=GEMINI_API_KEY)
-                logger.info("Gemini client (coordination) diinisialisasi.")
-            except ImportError:
-                logger.warning("Package 'google-genai' tidak ditemukan. Jalankan: pip install google-genai")
-        else:
-            logger.warning("GEMINI_API_KEY tidak diset — akan menggunakan fallback coordination plan.")
+        logger.info("CoordinationAgent siap — menggunakan LLMClient (Groq → Ollama → Fallback).")
 
     # ─────────────────────────────────────────────────────────
     #  Format Inputs
@@ -163,9 +154,6 @@ class CoordinationAgent:
     # ─────────────────────────────────────────────────────────
 
     def _generate_llm_plan(self, sitrep: dict) -> dict | None:
-        if not self._model:
-            return None
-
         try:
             prompt = self._prompt_template.format(
                 situation_report=self._format_sitrep(sitrep),
@@ -175,20 +163,14 @@ class CoordinationAgent:
             logger.error(f"Template coordination_plan.txt error: {e}")
             return None
 
-        try:
-            response = self._model.models.generate_content(
-                model=GEMINI_COORD_MODEL,
-                contents=prompt,
-                config={"max_output_tokens": 2000},
-            )
-            if not response.text:
-                logger.warning("Respons Gemini diblokir safety filter.")
-                return None
-            raw = response.text.strip()
+        raw = self._llm.generate(prompt, max_tokens=2000)
+        if not raw:
+            return None
 
+        try:
             json_match = re.search(r'\{.*\}', raw, re.DOTALL)
             if not json_match:
-                logger.warning("Respons Gemini tidak mengandung JSON.")
+                logger.warning("Respons LLM tidak mengandung JSON.")
                 return None
 
             result = json.loads(json_match.group())
@@ -201,12 +183,12 @@ class CoordinationAgent:
                 "resource_mapping":   str(result.get("resource_mapping", "")),
                 "action_priorities":  priorities[:5],
                 "estimated_timeline": str(result.get("estimated_timeline", "")),
-                "generated_by":       "llm",
+                "generated_by":       f"llm:{self._llm.last_provider}",
             }
         except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari Gemini: {e}")
+            logger.warning(f"Gagal parse JSON dari LLM: {e}")
         except Exception as e:
-            logger.error(f"Error Gemini coordination: {e}")
+            logger.error(f"Error coordination LLM: {e}")
         return None
 
     # ─────────────────────────────────────────────────────────

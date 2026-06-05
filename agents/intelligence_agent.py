@@ -21,9 +21,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import (
     EARTHQUAKE_KEYWORDS,
-    GEMINI_API_KEY,
-    GEMINI_HOAX_MODEL,
-    GEMINI_MAX_TOKENS,
+    LLM_REQUEST_DELAY,
     PIPELINE_MAX_INTEL_PER_EQ,
     RSS_FEEDS,
     RSS_MAX_AGE_HOURS,
@@ -35,6 +33,7 @@ from config import (
     TELEGRAM_SESSION_DIR,
 )
 from database.db_handler import DatabaseHandler
+from utils.llm_client import LLMClient
 
 logger = logging.getLogger("IntelligenceAgent")
 
@@ -60,23 +59,9 @@ class IntelligenceAgent:
 
     def __init__(self, db_handler: DatabaseHandler = None):
         self.db = db_handler or DatabaseHandler()
-        self._model = None
+        self._llm = LLMClient()
         self._hoax_prompt_template = _load_prompt("hoax_filter.txt")
-
-        if GEMINI_API_KEY:
-            try:
-                from google import genai
-
-                self._model = genai.Client(api_key=GEMINI_API_KEY)
-                logger.info("Gemini client (hoax filter) diinisialisasi.")
-            except ImportError:
-                logger.warning(
-                    "Package 'google-genai' tidak ditemukan. Jalankan: pip install google-genai"
-                )
-        else:
-            logger.warning(
-                "GEMINI_API_KEY tidak diset — hoax filter akan skip klasifikasi LLM."
-            )
+        logger.info("IntelligenceAgent siap — menggunakan LLMClient (Groq → Ollama → Fallback).")
 
     # ─────────────────────────────────────────────────────────
     #  RSS Fetching
@@ -299,15 +284,9 @@ class IntelligenceAgent:
 
     def _classify_credibility(self, article: dict) -> dict:
         """
-        Klasifikasi kredibilitas artikel menggunakan Claude.
+        Klasifikasi kredibilitas artikel menggunakan LLMClient.
         Return {"status": "VALID|HOAX|UNVERIFIED", "reasoning": "..."}.
         """
-        if not self._model:
-            return {
-                "status": "UNVERIFIED",
-                "reasoning": "Gemini API tidak tersedia (API key tidak diset).",
-            }
-
         try:
             prompt = self._hoax_prompt_template.format(
                 source=article.get("source_name", "Unknown"),
@@ -323,20 +302,14 @@ class IntelligenceAgent:
                 "reasoning": "Gagal memformat prompt — template error.",
             }
 
-        try:
-            response = self._model.models.generate_content(
-                model=GEMINI_HOAX_MODEL,
-                contents=prompt,
-                config={"max_output_tokens": 256},
-            )
-            if not response.text:
-                return {
-                    "status": "UNVERIFIED",
-                    "reasoning": "Respons diblokir Gemini safety filter.",
-                }
-            raw_text = response.text.strip()
+        raw_text = self._llm.generate(prompt, max_tokens=256)
+        if not raw_text:
+            return {
+                "status": "UNVERIFIED",
+                "reasoning": "LLM tidak tersedia — semua provider gagal.",
+            }
 
-            # Extract JSON dari response
+        try:
             json_match = re.search(r"\{[^{}]*\}", raw_text, re.DOTALL)
             if json_match:
                 result = json.loads(json_match.group())
@@ -349,12 +322,12 @@ class IntelligenceAgent:
                 }
 
             logger.warning(
-                f"Respons Gemini tidak mengandung JSON valid: {raw_text[:100]}"
+                f"Respons LLM tidak mengandung JSON valid: {raw_text[:100]}"
             )
         except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari Gemini: {e}")
+            logger.warning(f"Gagal parse JSON dari LLM: {e}")
         except Exception as e:
-            logger.error(f"Error saat klasifikasi Gemini: {e}")
+            logger.error(f"Error saat klasifikasi LLM: {e}")
 
         return {"status": "UNVERIFIED", "reasoning": "Gagal mengklasifikasi."}
 
@@ -418,7 +391,7 @@ class IntelligenceAgent:
                     f"{article['source_name']:8} | {article['title'][:60]}"
                 )
 
-            time.sleep(0.2)  # Rate limit untuk Claude API
+            time.sleep(max(0.2, LLM_REQUEST_DELAY / 2))  # Rate limit antar artikel
 
         logger.info(
             f"IntelligenceAgent selesai: {len(saved_reports)} laporan disimpan untuk gempa {eq_id}"

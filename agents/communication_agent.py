@@ -14,8 +14,8 @@ import logging
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import GEMINI_API_KEY, GEMINI_COMM_MODEL
 from database.db_handler import DatabaseHandler
+from utils.llm_client import LLMClient
 
 logger = logging.getLogger("CommunicationAgent")
 
@@ -47,18 +47,9 @@ class CommunicationAgent:
 
     def __init__(self, db_handler: DatabaseHandler = None):
         self.db = db_handler or DatabaseHandler()
-        self._model = None
+        self._llm = LLMClient()
         self._prompt_template = _load_prompt("communication_alert.txt")
-
-        if GEMINI_API_KEY:
-            try:
-                from google import genai
-                self._model = genai.Client(api_key=GEMINI_API_KEY)
-                logger.info("Gemini client (communication) diinisialisasi.")
-            except ImportError:
-                logger.warning("Package 'google-genai' tidak ditemukan. Jalankan: pip install google-genai")
-        else:
-            logger.warning("GEMINI_API_KEY tidak diset — akan menggunakan fallback drafts.")
+        logger.info("CommunicationAgent siap — menggunakan LLMClient (Groq → Ollama → Fallback).")
 
     # ─────────────────────────────────────────────────────────
     #  Format Sitrep untuk Prompt
@@ -88,7 +79,7 @@ class CommunicationAgent:
     # ─────────────────────────────────────────────────────────
 
     def _generate_llm_drafts(self, sitrep: dict) -> dict | None:
-        if not self._model:
+        if not self._llm:
             return None
 
         sitrep_text = self._format_sitrep(sitrep)
@@ -99,20 +90,14 @@ class CommunicationAgent:
             logger.error(f"Template communication_alert.txt error: {e}")
             return None
 
-        try:
-            response = self._model.models.generate_content(
-                model=GEMINI_COMM_MODEL,
-                contents=prompt,
-                config={"max_output_tokens": 1200},
-            )
-            if not response.text:
-                logger.warning("Respons Gemini diblokir safety filter.")
-                return None
-            raw = response.text.strip()
+        raw = self._llm.generate(prompt, max_tokens=1200)
+        if not raw:
+            return None
 
+        try:
             json_match = re.search(r'\{.*\}', raw, re.DOTALL)
             if not json_match:
-                logger.warning("Respons Gemini tidak mengandung JSON.")
+                logger.warning("Respons LLM tidak mengandung JSON.")
                 return None
 
             result = json.loads(json_match.group())
@@ -123,9 +108,9 @@ class CommunicationAgent:
                 "english":       str(result.get("english", ""))[:200],
             }
         except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari Gemini: {e}")
+            logger.warning(f"Gagal parse JSON dari LLM: {e}")
         except Exception as e:
-            logger.error(f"Error Gemini communication: {e}")
+            logger.error(f"Error communication LLM: {e}")
         return None
 
     # ─────────────────────────────────────────────────────────

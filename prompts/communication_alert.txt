@@ -1,16 +1,15 @@
-Kamu adalah juru komunikasi BPBD (Badan Penanggulangan Bencana Daerah) Indonesia.
+You are the official communication officer of BPBD (Indonesian Regional Disaster Management Agency).
 
-Berdasarkan Situation Report bencana gempa berikut, buat 4 versi pesan alert:
+Based on the earthquake Situation Report below, create 4 versions of an alert message:
 
 === SITUATION REPORT ===
 {situation_report}
 
-Instruksi per versi:
-1. Alert Publik (Bahasa Indonesia): Maksimal 160 karakter, mudah dipahami warga awam, cantumkan magnitudo dan lokasi, tidak menimbulkan kepanikan.
-2. Alert Bahasa Minang: Untuk komunitas lokal Sumatera Barat, gunakan Bahasa Minang yang akrab dan mudah dipahami warga setempat, cantumkan magnitudo.
-3. Laporan Teknis: Bahasa Indonesia formal, data teknis lengkap, untuk koordinasi antar-instansi (BNPB, TNI, Polri, BASARNAS).
-4. English Public Alert: Maksimal 200 karakter, plain English, include magnitude, location, and brief safety advice for international audience or foreign nationals.
+Instructions per version:
+1. public_id (Bahasa Indonesia): Maximum 160 characters, easy to understand for general public, include magnitude and location, do NOT cause panic.
+2. public_minang (Bahasa Minang): For local Sumatera Barat community, use friendly Minang language that locals understand, include magnitude.
+3. technical (English — Technical Coordination Report): Formal English, complete technical data, structured for inter-agency coordination (BNPB, TNI, POLRI, BASARNAS, international responders). Include: magnitude, depth, coordinates, risk level, affected areas, and recommended immediate actions. No character limit.
+4. english (English — Public Alert): Maximum 200 characters, plain English, include magnitude, location, and brief safety advice for international audience or foreign nationals.
 
-Berikan respons HANYA dalam format JSON berikut (tanpa teks lain di luar JSON):
-{{"public_id": "teks alert publik maksimal 160 karakter", "public_minang": "teks dalam Bahasa Minang", "technical": "laporan teknis formal lengkap", "english": "English public alert max 200 chars"}}
-
+Respond ONLY in the following JSON format (no text outside JSON):
+{{"public_id": "Indonesian public alert max 160 chars", "public_minang": "Minang language text", "technical": "Full English technical coordination report", "english": "English public alert max 200 chars"}}

@@ -23,7 +23,7 @@ POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL", 300))  # default: 5 menit
 MAGNITUDE_THRESHOLD = float(os.getenv("MAGNITUDE_THRESHOLD", 5.0))
 
 # ─────────────────────────────────────────────────────────────
-#  GEMINI / GOOGLE  (Fase 2)
+#  GEMINI / GOOGLE  (Legacy — tetap ada untuk kompatibilitas)
 # ─────────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_HOAX_MODEL = os.getenv("GEMINI_HOAX_MODEL", "gemini-2.0-flash")
@@ -31,6 +31,25 @@ GEMINI_ANALYSIS_MODEL = os.getenv("GEMINI_ANALYSIS_MODEL", "gemini-2.0-flash")
 GEMINI_COMM_MODEL = os.getenv("GEMINI_COMM_MODEL", "gemini-2.0-flash")
 GEMINI_COORD_MODEL = os.getenv("GEMINI_COORD_MODEL", "gemini-2.0-flash")
 GEMINI_MAX_TOKENS = int(os.getenv("GEMINI_MAX_TOKENS", 1500))
+
+# ─────────────────────────────────────────────────────────────
+#  GROQ API  (Primary LLM — Free Tier, high RPM)
+# ─────────────────────────────────────────────────────────────
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+# ─────────────────────────────────────────────────────────────
+#  OLLAMA  (Fallback — Local inference, offline capable)
+# ─────────────────────────────────────────────────────────────
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+OLLAMA_TIMEOUT  = int(os.getenv("OLLAMA_TIMEOUT", 60))
+
+# ─────────────────────────────────────────────────────────────
+#  LLM REQUEST SETTINGS
+# ─────────────────────────────────────────────────────────────
+# Delay antar request ke LLM (detik) — cegah burst rate limit
+LLM_REQUEST_DELAY = float(os.getenv("LLM_REQUEST_DELAY", 2.0))
 
 # ─────────────────────────────────────────────────────────────
 #  INTELLIGENCE AGENT — RSS Feeds  (Fase 2)

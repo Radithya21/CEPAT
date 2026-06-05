@@ -13,10 +13,9 @@ import logging
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import (
-    GEMINI_API_KEY, GEMINI_ANALYSIS_MODEL, GEMINI_MAX_TOKENS,
-)
+from config import GEMINI_MAX_TOKENS
 from database.db_handler import DatabaseHandler
+from utils.llm_client import LLMClient
 
 logger = logging.getLogger("AnalysisAgent")
 
@@ -77,18 +76,9 @@ class AnalysisAgent:
 
     def __init__(self, db_handler: DatabaseHandler = None):
         self.db = db_handler or DatabaseHandler()
-        self._model = None
+        self._llm = LLMClient()
         self._sitrep_prompt_template = _load_prompt("situation_report.txt")
-
-        if GEMINI_API_KEY:
-            try:
-                from google import genai
-                self._model = genai.Client(api_key=GEMINI_API_KEY)
-                logger.info("Gemini client (analysis) diinisialisasi.")
-            except ImportError:
-                logger.warning("Package 'google-genai' tidak ditemukan. Jalankan: pip install google-genai")
-        else:
-            logger.warning("GEMINI_API_KEY tidak diset — akan menggunakan fallback rule-based report.")
+        logger.info("AnalysisAgent siap — menggunakan LLMClient (Groq → Ollama → Fallback).")
 
     # ─────────────────────────────────────────────────────────
     #  Formatting Input
@@ -134,10 +124,7 @@ class AnalysisAgent:
     # ─────────────────────────────────────────────────────────
 
     def _generate_llm_report(self, eq: dict, intel: list[dict]) -> dict | None:
-        """Hasilkan Situation Report menggunakan Gemini. Return dict atau None jika gagal."""
-        if not self._model:
-            return None
-
+        """Hasilkan Situation Report menggunakan LLMClient. Return dict atau None jika gagal."""
         try:
             prompt = self._sitrep_prompt_template.format(
                 earthquake_data=self._format_earthquake(eq),
@@ -147,21 +134,15 @@ class AnalysisAgent:
             logger.error(f"Template situation_report.txt error — placeholder tidak valid: {e}")
             return None
 
-        try:
-            response = self._model.models.generate_content(
-                model=GEMINI_ANALYSIS_MODEL,
-                contents=prompt,
-                config={"max_output_tokens": GEMINI_MAX_TOKENS},
-            )
-            if not response.text:
-                logger.warning("Respons Gemini diblokir safety filter.")
-                return None
-            raw_text = response.text.strip()
+        raw_text = self._llm.generate(prompt, max_tokens=GEMINI_MAX_TOKENS)
+        if not raw_text:
+            return None
 
+        try:
             # Extract JSON — bisa ada teks sebelum/sesudah JSON
             json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
             if not json_match:
-                logger.warning("Respons Gemini tidak mengandung JSON.")
+                logger.warning("Respons LLM tidak mengandung JSON.")
                 return None
 
             result = json.loads(json_match.group())
@@ -183,13 +164,13 @@ class AnalysisAgent:
                 "recommendations":    recs,
                 "notes":              result.get("notes", ""),
                 "raw_llm_output":     raw_text,
-                "generated_by":       "llm",
+                "generated_by":       f"llm:{self._llm.last_provider}",
             }
 
         except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari Gemini: {e}")
+            logger.warning(f"Gagal parse JSON dari LLM: {e}")
         except Exception as e:
-            logger.error(f"Error Gemini analysis: {e}")
+            logger.error(f"Error analysis LLM: {e}")
         return None
 
     # ─────────────────────────────────────────────────────────
