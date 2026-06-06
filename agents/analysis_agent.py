@@ -138,15 +138,12 @@ class AnalysisAgent:
         if not raw_text:
             return None
 
+        result = LLMClient.extract_json(raw_text)
+        if not result:
+            logger.warning("AnalysisAgent: Gagal parse JSON dari LLM.")
+            return None
+
         try:
-            # Extract JSON — bisa ada teks sebelum/sesudah JSON
-            json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
-            if not json_match:
-                logger.warning("Respons LLM tidak mengandung JSON.")
-                return None
-
-            result = json.loads(json_match.group())
-
             # Validasi field wajib
             risk = result.get("risk_level", "MEDIUM").upper()
             if risk not in ("LOW", "MEDIUM", "HIGH", "CRITICAL"):
@@ -167,8 +164,6 @@ class AnalysisAgent:
                 "generated_by":       f"llm:{self._llm.last_provider}",
             }
 
-        except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari LLM: {e}")
         except Exception as e:
             logger.error(f"Error analysis LLM: {e}")
         return None
@@ -228,6 +223,14 @@ class AnalysisAgent:
         if not eq:
             logger.error(f"Gempa ID {earthquake_id} tidak ditemukan.")
             return None
+
+        # Bersihkan situation report lama untuk gempa ini agar tidak duplikat
+        try:
+            with self.db._connect() as conn:
+                conn.execute("DELETE FROM situation_reports WHERE earthquake_id = ?", (earthquake_id,))
+                conn.commit()
+        except Exception as e:
+            logger.warning(f"Gagal membersihkan sitrep lama: {e}")
 
         intel = self.db.get_intelligence_reports(earthquake_id)
         logger.info(

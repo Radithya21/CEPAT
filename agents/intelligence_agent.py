@@ -309,10 +309,9 @@ class IntelligenceAgent:
                 "reasoning": "LLM tidak tersedia — semua provider gagal.",
             }
 
-        try:
-            json_match = re.search(r"\{[^{}]*\}", raw_text, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
+        result = LLMClient.extract_json(raw_text)
+        if result:
+            try:
                 status = result.get("status", "UNVERIFIED").upper()
                 if status not in ("VALID", "HOAX", "UNVERIFIED"):
                     status = "UNVERIFIED"
@@ -320,14 +319,12 @@ class IntelligenceAgent:
                     "status": status,
                     "reasoning": result.get("reasoning", ""),
                 }
-
+            except Exception as e:
+                logger.error(f"Error saat klasifikasi LLM: {e}")
+        else:
             logger.warning(
                 f"Respons LLM tidak mengandung JSON valid: {raw_text[:100]}"
             )
-        except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari LLM: {e}")
-        except Exception as e:
-            logger.error(f"Error saat klasifikasi LLM: {e}")
 
         return {"status": "UNVERIFIED", "reasoning": "Gagal mengklasifikasi."}
 

@@ -151,8 +151,7 @@ python dashboard/app.py
 ```
 
 Setelah berjalan, buka browser ke:
-- **Dashboard utama:** http://localhost:5000
-- **Approval Queue:** http://localhost:5000/approval
+- **Dashboard utama:** http://localhost:5000 (Semua tab monitoring, situasi, analisa, serta antrean persetujuan/Queue sudah terintegrasi di sini)
 
 Output terminal normal:
 ```
@@ -210,7 +209,7 @@ Pada tabel daftar gempa, gempa dengan M ≥ 5.0 menampilkan tombol **"Analisis"*
 | 4 | Coordination Agent | Peta kebutuhan sumber daya + 5 aksi prioritas |
 
 ### Langkah 3 — Review & Approval
-Buka halaman **Approval Queue** (`/approval`). Petugas BPBD dapat:
+Buka tab **Queue** di dashboard utama. Petugas BPBD dapat:
 - ✅ **Setujui** draf untuk dikirim/dieksekusi
 - ✏️ **Edit** konten sebelum disetujui
 - ❌ **Tolak** draf yang tidak sesuai
@@ -259,8 +258,7 @@ CEPAT/
 
 | Method | Endpoint | Deskripsi |
 |---|---|---|
-| `GET` | `/` | Halaman dashboard utama |
-| `GET` | `/approval` | Halaman approval queue |
+| `GET` | `/` | Halaman dashboard utama (dengan tab Queue terintegrasi) |
 | `GET` | `/api/earthquakes` | Semua data gempa (max 200) |
 | `POST` | `/api/earthquakes/:id/acknowledge` | Tandai gempa sebagai diakui |
 | `GET` | `/api/stats` | Statistik + status orchestrator |

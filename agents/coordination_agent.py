@@ -149,6 +149,48 @@ class CoordinationAgent:
                 lines.append(f"  - {item}: {qty}")
         return "\n".join(lines)
 
+    def _format_resource_mapping_result(self, val) -> str:
+        if not val:
+            return ""
+        
+        # Jika berupa string, cek apakah berisi representasi serialized JSON atau Python dict
+        if isinstance(val, str):
+            val_str = val.strip()
+            if val_str.startswith("{") and val_str.endswith("}"):
+                try:
+                    import json
+                    parsed_val = json.loads(val_str)
+                    val = parsed_val
+                except Exception:
+                    try:
+                        import ast
+                        parsed_val = ast.literal_eval(val_str)
+                        val = parsed_val
+                    except Exception:
+                        pass
+
+        if isinstance(val, str):
+            return val
+        
+        if isinstance(val, dict):
+            lines = []
+            for k, v in val.items():
+                if isinstance(v, dict):
+                    lines.append(f"【 {k} 】")
+                    for sub_k, sub_v in v.items():
+                        if isinstance(sub_v, dict):
+                            lines.append(f"  * {sub_k}:")
+                            for s_k, s_v in sub_v.items():
+                                lines.append(f"    - {s_k}: {s_v}")
+                        else:
+                            lines.append(f"  * {sub_k}: {sub_v}")
+                    lines.append("")  # Spasi antar kategori
+                else:
+                    lines.append(f"• {k}: {v}")
+            return "\n".join(lines).strip()
+        
+        return str(val)
+
     # ─────────────────────────────────────────────────────────
     #  LLM Plan Generation
     # ─────────────────────────────────────────────────────────
@@ -167,26 +209,27 @@ class CoordinationAgent:
         if not raw:
             return None
 
+        result = LLMClient.extract_json(raw)
+        if not result:
+            logger.warning("CoordinationAgent: Gagal parse JSON dari LLM.")
+            logger.debug(f"Raw LLM response (first 300 chars): {raw[:300]}")
+            return None
+
         try:
-            json_match = re.search(r'\{.*\}', raw, re.DOTALL)
-            if not json_match:
-                logger.warning("Respons LLM tidak mengandung JSON.")
-                return None
-
-            result = json.loads(json_match.group())
-
             priorities = result.get("action_priorities", [])
             if not isinstance(priorities, list):
                 priorities = []
 
+            # Format resource mapping dynamically
+            raw_resource_mapping = result.get("resource_mapping", "")
+            resource_mapping = self._format_resource_mapping_result(raw_resource_mapping)
+
             return {
-                "resource_mapping":   str(result.get("resource_mapping", "")),
+                "resource_mapping":   resource_mapping,
                 "action_priorities":  priorities[:5],
                 "estimated_timeline": str(result.get("estimated_timeline", "")),
                 "generated_by":       f"llm:{self._llm.last_provider}",
             }
-        except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari LLM: {e}")
         except Exception as e:
             logger.error(f"Error coordination LLM: {e}")
         return None
@@ -200,15 +243,41 @@ class CoordinationAgent:
         mag  = sitrep.get("magnitude", 0)
         loc  = sitrep.get("location_desc", "—")
 
-        resource_mapping = (
-            f"Gempa M{mag} di {loc} membutuhkan mobilisasi sumber daya segera.\n"
-            f"Personel: Kerahkan tim SAR (prioritas), petugas BPBD, dan relawan terlatih.\n"
-            f"Logistik: Siapkan paket sembako dan tenda untuk pengungsian, air bersih segera didistribusikan.\n"
-            f"Peralatan: Excavator dan ambulans disiagakan. Genset untuk backup listrik posko darurat."
-        )
+        # Kebutuhan standar berdasarkan tingkat risiko gempa
+        if risk == "CRITICAL":
+            req_p = {"Tim SAR": 10, "Petugas BPBD": 50, "Relawan terlatih": 100, "Tenaga medis (dokter/perawat)": 20}
+            req_l = {"Paket sembako": 2000, "Tenda pengungsi kapasitas 10 orang": 100, "Selimut / matras": 800, "Obat-obatan dasar": "5 kontainer", "Air bersih (liter)": 50000}
+            req_e = {"Excavator": 5, "Ambulans": 10, "Mobil rescue BPBD": 5, "Perahu karet": 10, "Genset portable": 15, "Drone pemetaan": 2}
+        elif risk == "HIGH":
+            req_p = {"Tim SAR": 5, "Petugas BPBD": 30, "Relawan terlatih": 60, "Tenaga medis (dokter/perawat)": 12}
+            req_l = {"Paket sembako": 1000, "Tenda pengungsi kapasitas 10 orang": 50, "Selimut / matras": 400, "Obat-obatan dasar": "3 kontainer", "Air bersih (liter)": 25000}
+            req_e = {"Excavator": 3, "Ambulans": 6, "Mobil rescue BPBD": 3, "Perahu karet": 6, "Genset portable": 10, "Drone pemetaan": 2}
+        elif risk == "MEDIUM":
+            req_p = {"Tim SAR": 2, "Petugas BPBD": 15, "Relawan terlatih": 30, "Tenaga medis (dokter/perawat)": 8}
+            req_l = {"Paket sembako": 500, "Tenda pengungsi kapasitas 10 orang": 20, "Selimut / matras": 200, "Obat-obatan dasar": "1 kontainer", "Air bersih (liter)": 10000}
+            req_e = {"Excavator": 1, "Ambulans": 3, "Mobil rescue BPBD": 2, "Perahu karet": 4, "Genset portable": 5, "Drone pemetaan": 1}
+        else: # LOW
+            req_p = {"Tim SAR": 1, "Petugas BPBD": 5, "Relawan terlatih": 10, "Tenaga medis (dokter/perawat)": 2}
+            req_l = {"Paket sembako": 100, "Tenda pengungsi kapasitas 10 orang": 5, "Selimut / matras": 50, "Obat-obatan dasar": "0 kontainer", "Air bersih (liter)": 2000}
+            req_e = {"Excavator": 0, "Ambulans": 1, "Mobil rescue BPBD": 1, "Perahu karet": 1, "Genset portable": 2, "Drone pemetaan": 0}
 
+        fallback_data = {
+            "Personel": {
+                "Ketersediaan": DEFAULT_RESOURCES["Personel"],
+                "Kebutuhan": req_p
+            },
+            "Logistik": {
+                "Ketersediaan": DEFAULT_RESOURCES["Logistik"],
+                "Kebutuhan": req_l
+            },
+            "Peralatan & Kendaraan": {
+                "Ketersediaan": DEFAULT_RESOURCES["Peralatan & Kendaraan"],
+                "Kebutuhan": req_e
+            }
+        }
+
+        resource_mapping = self._format_resource_mapping_result(fallback_data)
         actions = _FALLBACK_ACTIONS.get(risk, _FALLBACK_ACTIONS["MEDIUM"])
-
         timeline_map = {"CRITICAL": "72 jam intensif", "HIGH": "48 jam intensif", "MEDIUM": "24 jam monitoring", "LOW": "12 jam pantau"}
 
         return {
@@ -232,12 +301,34 @@ class CoordinationAgent:
             logger.warning(f"Tidak ada sitrep untuk gempa {earthquake_id} — lewati Coordination Agent.")
             return None
 
+        # Bersihkan coordination plan lama untuk gempa ini agar tidak duplikat
+        try:
+            with self.db._connect() as conn:
+                conn.execute("DELETE FROM coordination_plans WHERE earthquake_id = ?", (earthquake_id,))
+                conn.commit()
+        except Exception as e:
+            logger.warning(f"Gagal membersihkan plan lama: {e}")
+
         logger.info(f"CoordinationAgent: membuat plan untuk gempa ID={earthquake_id} M{sitrep.get('magnitude')}")
 
         plan_data = self._generate_llm_plan(sitrep)
         if plan_data is None:
             logger.warning("LLM gagal/tidak tersedia — menggunakan fallback plan.")
             plan_data = self._generate_fallback_plan(sitrep)
+
+        # Format action_priorities agar mencakup key 'timeline' untuk frontend React
+        actions = plan_data.get("action_priorities", [])
+        formatted_actions = []
+        for a in actions:
+            if isinstance(a, dict):
+                a_copy = a.copy()
+                hours = a_copy.get("timeline_hours")
+                if hours is not None:
+                    a_copy["timeline"] = f"+{hours} jam"
+                elif a_copy.get("timeline") is None:
+                    a_copy["timeline"] = "—"
+                formatted_actions.append(a_copy)
+        plan_data["action_priorities"] = formatted_actions
 
         plan_data["situation_report_id"] = sitrep["id"]
         plan_data["earthquake_id"]       = earthquake_id

@@ -94,21 +94,19 @@ class CommunicationAgent:
         if not raw:
             return None
 
-        try:
-            json_match = re.search(r'\{.*\}', raw, re.DOTALL)
-            if not json_match:
-                logger.warning("Respons LLM tidak mengandung JSON.")
-                return None
+        result = LLMClient.extract_json(raw)
+        if not result:
+            logger.warning("CommunicationAgent: Gagal parse JSON dari LLM.")
+            logger.debug(f"Raw LLM response (first 300 chars): {raw[:300]}")
+            return None
 
-            result = json.loads(json_match.group())
+        try:
             return {
                 "public_id":     str(result.get("public_id", ""))[:200],
                 "public_minang": str(result.get("public_minang", "")),
                 "technical":     str(result.get("technical", "")),
                 "english":       str(result.get("english", ""))[:200],
             }
-        except json.JSONDecodeError as e:
-            logger.warning(f"Gagal parse JSON dari LLM: {e}")
         except Exception as e:
             logger.error(f"Error communication LLM: {e}")
         return None
@@ -165,6 +163,14 @@ class CommunicationAgent:
         if not sitrep:
             logger.warning(f"Tidak ada sitrep untuk gempa {earthquake_id} — lewati Communication Agent.")
             return []
+
+        # Bersihkan draf pesan lama untuk gempa ini agar tidak duplikat
+        try:
+            with self.db._connect() as conn:
+                conn.execute("DELETE FROM communication_drafts WHERE earthquake_id = ?", (earthquake_id,))
+                conn.commit()
+        except Exception as e:
+            logger.warning(f"Gagal membersihkan draf pesan lama: {e}")
 
         logger.info(f"CommunicationAgent: membuat draf untuk gempa ID={earthquake_id} M{sitrep.get('magnitude')}")
 

@@ -4033,7 +4033,501 @@
                 return <canvas ref={canvasRef} id="gc3" />;
             }
 
-            /* ─ EditModal ──────────────────────────────────────────────────────────── */
+            /* ─ ResourceMappingViewer ─────────────────────────────────────────────────── */
+            function ResourceMappingViewer({ text }) {
+                if (!text) return null;
+                
+                const parseData = () => {
+                    const categories = {
+                        personel: { name: "Personel", icon: "🧑‍🚒", items: [], recommendations: [] },
+                        logistik: { name: "Logistik", icon: "📦", items: [], recommendations: [] },
+                        peralatan: { name: "Peralatan & Kendaraan", icon: "🚜", items: [], recommendations: [] }
+                    };
+                    
+                    const getCategory = (name) => {
+                        const n = name.toLowerCase();
+                        if (n.includes("personel") || n.includes("human") || n.includes("petugas")) return categories.personel;
+                        if (n.includes("logistik") || n.includes("bantuan") || n.includes("makanan") || n.includes("sembako")) return categories.logistik;
+                        if (n.includes("peralatan") || n.includes("kendaraan") || n.includes("alat") || n.includes("mobil")) return categories.peralatan;
+                        return null;
+                    };
+                    
+                    const cleanStr = (s) => s.replace(/^[-•*\s]+/, "").trim();
+                    
+                    const parseVal = (v) => {
+                        if (v === undefined || v === null) return 0;
+                        if (typeof v === 'number') return v;
+                        const match = String(v).trim().match(/^([\d.]+)/);
+                        return match ? parseFloat(match[1]) : NaN;
+                    };
+
+                    const getUnit = (v) => {
+                        if (v === undefined || v === null) return "";
+                        if (typeof v === 'number') return "";
+                        const match = String(v).trim().match(/^[\d.]+\s*(.*)$/);
+                        return (match && match[1]) ? match[1].trim() : "";
+                    };
+                    
+                    // Smart helper to extract name and quantity from items like "2 Tim SAR" or "10-15 Tim SAR"
+                    const extractResourceDetails = (str) => {
+                        const s = str.trim();
+                        if (!s) return null;
+                        
+                        // Pattern 1: Number/Range + Unit prefix, e.g. "1-2 kontainer Obat-obatan dasar"
+                        const regexPrefix = /^(?:[-•*]\s*)?([\d\-]+(?:\s+(?:kontainer|liter|unit|orang|paket|box|ton|m2))?)\s+(.*)$/i;
+                        const matchPrefix = s.match(regexPrefix);
+                        if (matchPrefix) {
+                            return {
+                                quantity: matchPrefix[1].trim(),
+                                name: matchPrefix[2].trim()
+                            };
+                        }
+                        
+                        // Pattern 2: Number/Range prefix only, e.g. "2 Tim SAR", "10-15 Tim SAR"
+                        const regexNum = /^(?:[-•*]\s*)?([\d\-]+)\s+(.*)$/;
+                        const matchNum = s.match(regexNum);
+                        if (matchNum) {
+                            return {
+                                quantity: matchNum[1].trim(),
+                                name: matchNum[2].trim()
+                            };
+                        }
+                        
+                        // Pattern 3: Key-value with colon suffix, e.g. "Tim SAR: 2"
+                        const regexSuffix = /^(?:[-•*]\s*)?(.*?)\s*:\s*([\d\-]+(?:\s+(?:kontainer|liter|unit|orang|paket|box|ton|m2))?)$/i;
+                        const matchSuffix = s.match(regexSuffix);
+                        if (matchSuffix) {
+                            return {
+                                quantity: matchSuffix[2].trim(),
+                                name: matchSuffix[1].trim()
+                            };
+                        }
+                        
+                        // Fallback
+                        return {
+                            quantity: "",
+                            name: s.replace(/^(?:[-•*]\s*)/, "").trim()
+                        };
+                    };
+
+                    // Try parsing as JSON/Python dict
+                    const trimmedText = text.trim();
+                    if (trimmedText.startsWith("{") && trimmedText.endsWith("}")) {
+                        try {
+                            let parsedObj = null;
+                            try {
+                                const doubleQuoted = trimmedText
+                                    .replace(/'/g, '"')
+                                    .replace(/True/g, 'true')
+                                    .replace(/False/g, 'false')
+                                    .replace(/None/g, 'null');
+                                parsedObj = JSON.parse(doubleQuoted);
+                            } catch (e) {
+                                parsedObj = (new Function(`return (${trimmedText})`))();
+                            }
+                            
+                            if (parsedObj && typeof parsedObj === "object") {
+                                let hasData = false;
+                                for (const [catKey, catVal] of Object.entries(parsedObj)) {
+                                    const targetCat = getCategory(catKey);
+                                    if (targetCat && typeof catVal === "object") {
+                                        let ketersediaan = {};
+                                        let kebutuhan = {};
+                                        for (const [subKey, subVal] of Object.entries(catVal)) {
+                                            const subK = subKey.toLowerCase();
+                                            if (subK.includes("sedia") || subK.includes("ada") || subK.includes("avail")) {
+                                                ketersediaan = subVal || {};
+                                            } else if (subK.includes("butuh") || subK.includes("minta") || subK.includes("req")) {
+                                                kebutuhan = subVal || {};
+                                            }
+                                        }
+                                        
+                                        const allItems = new Set([...Object.keys(ketersediaan), ...Object.keys(kebutuhan)]);
+                                        for (const itemName of allItems) {
+                                            const tersedia = ketersediaan[itemName] !== undefined ? ketersediaan[itemName] : 0;
+                                            const kebutuhanVal = kebutuhan[itemName] !== undefined ? kebutuhan[itemName] : 0;
+                                            
+                                            let kekurangan = "";
+                                            const avNum = parseVal(tersedia);
+                                            const reqNum = parseVal(kebutuhanVal);
+                                            if (!isNaN(avNum) && !isNaN(reqNum) && avNum < reqNum) {
+                                                kekurangan = String(reqNum - avNum);
+                                            }
+                                            
+                                            let statusText = "Terpenuhi ✓";
+                                            let statusType = "success";
+                                            if (kekurangan) {
+                                                statusText = `Kurang ${kekurangan}`;
+                                                statusType = "warning";
+                                            }
+                                            
+                                            targetCat.items.push({
+                                                name: itemName,
+                                                tersedia: tersedia,
+                                                kebutuhan: kebutuhanVal,
+                                                statusText: statusText,
+                                                statusType: statusType
+                                            });
+                                            hasData = true;
+                                        }
+                                    }
+                                }
+                                if (hasData) return categories;
+                            }
+                        } catch (err) {
+                            console.error("Failed to parse resource mapping dict:", err);
+                        }
+                    }
+                    
+                    // Parse line-by-line formatted string
+                    const lines = text.split('\n');
+                    let currentCategory = null;
+                    let currentSection = ''; // 'tersedia', 'kebutuhan', 'kekurangan'
+                    let tempTersedia = {};
+                    let tempKebutuhan = {};
+                    let tempKekurangan = {};
+                    let hasData = false;
+                    
+                    const commitCategory = (cat) => {
+                        if (!cat) return;
+                        const allNames = new Set([
+                            ...Object.keys(tempTersedia),
+                            ...Object.keys(tempKebutuhan),
+                            ...Object.keys(tempKekurangan)
+                        ]);
+                        
+                        for (const name of allNames) {
+                            if (!name) continue;
+                            if (cat.items.some(it => it.name.toLowerCase() === name.toLowerCase())) continue;
+                            
+                            const tersedia = tempTersedia[name] || "0";
+                            const kebutuhan = tempKebutuhan[name] || "0";
+                            const kekurangan = tempKekurangan[name] || "";
+                            
+                            let statusText = "Terpenuhi ✓";
+                            let statusType = "success";
+                            
+                            if (kekurangan) {
+                                const isZero = kekurangan === "0" || kekurangan === "Terpenuhi" || kekurangan.toLowerCase() === "cukup" || kekurangan.toLowerCase() === "tidak ada";
+                                if (isZero) {
+                                    statusText = "Terpenuhi ✓";
+                                    statusType = "success";
+                                } else {
+                                    statusText = `Kurang ${kekurangan}`;
+                                    statusType = "warning";
+                                }
+                            } else {
+                                const avNum = parseVal(tersedia);
+                                const reqNum = parseVal(kebutuhan);
+                                const unit = getUnit(kebutuhan) || getUnit(tersedia);
+                                
+                                if (!isNaN(avNum) && !isNaN(reqNum)) {
+                                    if (avNum >= reqNum) {
+                                        statusText = "Terpenuhi ✓";
+                                        statusType = "success";
+                                    } else {
+                                        const diff = reqNum - avNum;
+                                        statusText = `Kurang ${diff}${unit ? " " + unit : ""}`;
+                                        statusType = "warning";
+                                    }
+                                } else {
+                                    if (tersedia === kebutuhan && tersedia !== "0") {
+                                        statusText = "Terpenuhi ✓";
+                                        statusType = "success";
+                                    } else if (tersedia && tersedia !== "0" && !kebutuhan) {
+                                        statusText = "Tersedia ✓";
+                                        statusType = "success";
+                                    } else {
+                                        statusText = "Kurang / Cek";
+                                        statusType = "warning";
+                                    }
+                                }
+                            }
+                            
+                            cat.items.push({
+                                name: name,
+                                tersedia: tersedia,
+                                kebutuhan: kebutuhan,
+                                statusText: statusText,
+                                statusType: statusType
+                            });
+                            hasData = true;
+                        }
+                        
+                        tempTersedia = {};
+                        tempKebutuhan = {};
+                        tempKekurangan = {};
+                    };
+                    
+                    const parseItemsList = (str, targetMap) => {
+                        const parts = str.split(",");
+                        for (const part of parts) {
+                            const details = extractResourceDetails(part);
+                            if (details) {
+                                targetMap[details.name] = details.quantity || "Ada";
+                            }
+                        }
+                    };
+
+                    for (let i = 0; i < lines.length; i++) {
+                        let line = lines[i].trim();
+                        if (!line) continue;
+                        
+                        if (line.startsWith("【") && line.includes("】")) {
+                            commitCategory(currentCategory);
+                            const catName = line.replace(/[【】]/g, '').trim();
+                            currentCategory = getCategory(catName);
+                            currentSection = '';
+                            continue;
+                        }
+                        
+                        const lowerLine = line.toLowerCase();
+                        if (lowerLine.includes("ketersediaan:") || lowerLine.includes("tersedia:") || (lowerLine.includes("tersedia") && line.endsWith(":"))) {
+                            currentSection = 'tersedia';
+                            const colonIdx = line.indexOf(":");
+                            const contentAfter = line.substring(colonIdx + 1).trim();
+                            if (contentAfter) parseItemsList(contentAfter, tempTersedia);
+                            continue;
+                        } else if (lowerLine.includes("kebutuhan:") || lowerLine.includes("butuh:") || (lowerLine.includes("kebutuhan") && line.endsWith(":"))) {
+                            currentSection = 'kebutuhan';
+                            const colonIdx = line.indexOf(":");
+                            const contentAfter = line.substring(colonIdx + 1).trim();
+                            if (contentAfter) parseItemsList(contentAfter, tempKebutuhan);
+                            continue;
+                        } else if (lowerLine.includes("kekurangan:") || lowerLine.includes("kurang:") || lowerLine.includes("tambahan:") || (lowerLine.includes("kekurangan") && line.endsWith(":"))) {
+                            currentSection = 'kekurangan';
+                            const colonIdx = line.indexOf(":");
+                            const contentAfter = line.substring(colonIdx + 1).trim();
+                            if (contentAfter) parseItemsList(contentAfter, tempKekurangan);
+                            continue;
+                        }
+                        
+                        // Parse bullets
+                        if (currentCategory && (line.startsWith("-") || line.startsWith("•") || line.startsWith("*"))) {
+                            const cleaned = cleanStr(line);
+                            const colonIdx = cleaned.indexOf(":");
+                            if (colonIdx !== -1) {
+                                const key = cleaned.substring(0, colonIdx).trim().toLowerCase();
+                                const val = cleaned.substring(colonIdx + 1).trim();
+                                
+                                if (key.includes("tersedia") || key.includes("ketersediaan")) {
+                                    parseItemsList(val, tempTersedia);
+                                } else if (key.includes("kebutuhan") || key.includes("butuh")) {
+                                    parseItemsList(val, tempKebutuhan);
+                                } else if (key.includes("kekurangan") || key.includes("kurang") || key.includes("tambahan")) {
+                                    parseItemsList(val, tempKekurangan);
+                                } else {
+                                    // Bullet with details like "- Tim SAR: 2" inside a section
+                                    const details = extractResourceDetails(cleaned);
+                                    if (details) {
+                                        if (currentSection === 'tersedia') tempTersedia[details.name] = details.quantity;
+                                        else if (currentSection === 'kebutuhan') tempKebutuhan[details.name] = details.quantity;
+                                        else if (currentSection === 'kekurangan') tempKekurangan[details.name] = details.quantity;
+                                    }
+                                }
+                            } else {
+                                currentCategory.recommendations.push(cleaned);
+                                hasData = true;
+                            }
+                            continue;
+                        }
+                        
+                        // Parsing plain fallback text (e.g. "Personel: Kerahkan tim SAR...")
+                        const colonIdx = line.indexOf(":");
+                        if (colonIdx !== -1) {
+                            const key = line.substring(0, colonIdx).trim();
+                            const val = line.substring(colonIdx + 1).trim();
+                            const cat = getCategory(key);
+                            if (cat) {
+                                const recommendationsList = val.split(/[,;]/).map(p => cleanStr(p)).filter(Boolean);
+                                cat.recommendations.push(...recommendationsList);
+                                hasData = true;
+                            }
+                        } else {
+                            if (currentCategory) {
+                                currentCategory.recommendations.push(line);
+                                hasData = true;
+                            }
+                        }
+                    }
+                    
+                    commitCategory(currentCategory);
+                    return hasData ? categories : null;
+                };
+                
+                const parsed = parseData();
+                
+                if (!parsed) {
+                    return (
+                        <div style={{
+                            fontSize: "11px",
+                            color: "var(--text-1)",
+                            lineHeight: 1.6,
+                            background: "var(--surface-2)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "8px",
+                            padding: "12px 14px",
+                            whiteSpace: "pre-wrap",
+                            fontFamily: "var(--sans)",
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "flex-start"
+                        }}>
+                            <span style={{ fontSize: "14px", color: "var(--blue)", marginTop: "2px" }}>ℹ️</span>
+                            <div style={{ flex: 1 }}>{text}</div>
+                        </div>
+                    );
+                }
+                
+                return (
+                    <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                        gap: "16px",
+                        marginTop: "6px"
+                    }}>
+                        {Object.values(parsed).map((cat) => {
+                            if (cat.items.length === 0 && cat.recommendations.length === 0) return null;
+                            
+                            return (
+                                <div 
+                                    key={cat.name} 
+                                    style={{
+                                        background: "var(--surface-2)",
+                                        border: "1px solid var(--border)",
+                                        borderRadius: "8px",
+                                        padding: "16px 18px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "14px",
+                                        boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+                                    }}
+                                >
+                                    {/* Header */}
+                                    <div style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        borderBottom: "1px solid var(--border)",
+                                        paddingBottom: "8px"
+                                    }}>
+                                        <span style={{ fontSize: "16px" }}>{cat.icon}</span>
+                                        <span style={{ 
+                                            fontSize: "11px", 
+                                            fontWeight: 700, 
+                                            textTransform: "uppercase", 
+                                            letterSpacing: "0.06em",
+                                            color: "var(--text-1)" 
+                                        }}>
+                                            {cat.name}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Clean Comparative Table */}
+                                    {cat.items.length > 0 && (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                            <div style={{ 
+                                                display: "grid", 
+                                                gridTemplateColumns: "1fr 50px 50px 85px", 
+                                                gap: "8px", 
+                                                paddingBottom: "6px", 
+                                                borderBottom: "1px solid var(--border)", 
+                                                fontSize: "9px", 
+                                                fontWeight: 700, 
+                                                color: "var(--text-3)", 
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.05em"
+                                            }}>
+                                                <span>Sumber Daya</span>
+                                                <span style={{ textAlign: "right" }}>Sedia</span>
+                                                <span style={{ textAlign: "right" }}>Butuh</span>
+                                                <span style={{ textAlign: "right" }}>Status</span>
+                                            </div>
+                                            {cat.items.map((item, idx) => {
+                                                const isWarning = item.statusType !== 'success';
+                                                const statusColor = isWarning ? "var(--orange)" : "var(--green)";
+                                                return (
+                                                    <div 
+                                                        key={idx} 
+                                                        style={{ 
+                                                            display: "grid", 
+                                                            gridTemplateColumns: "1fr 50px 50px 85px", 
+                                                            gap: "8px", 
+                                                            alignItems: "center", 
+                                                            padding: "6px 0", 
+                                                            fontSize: "10px", 
+                                                            borderBottom: idx < cat.items.length - 1 ? "1px solid rgba(255,255,255,0.02)" : "none" 
+                                                        }}
+                                                    >
+                                                        <span style={{ fontWeight: 600, color: "var(--text-1)" }}>{item.name}</span>
+                                                        <span style={{ textAlign: "right", color: "var(--green)", fontFamily: "var(--mono)", fontWeight: 500 }}>{item.tersedia}</span>
+                                                        <span style={{ textAlign: "right", color: "var(--text-2)", fontFamily: "var(--mono)", fontWeight: 500 }}>{item.kebutuhan}</span>
+                                                        
+                                                        {/* Clean Minimalist Status */}
+                                                        <span style={{ 
+                                                            textAlign: "right", 
+                                                            fontSize: "9px", 
+                                                            color: statusColor, 
+                                                            fontWeight: 600,
+                                                            whiteSpace: "nowrap",
+                                                            overflow: "hidden",
+                                                            textOverflow: "ellipsis",
+                                                            display: "inline-flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "flex-end",
+                                                            gap: "4px"
+                                                        }} title={item.statusText}>
+                                                            <span style={{ 
+                                                                width: "5px", 
+                                                                height: "5px", 
+                                                                borderRadius: "50%", 
+                                                                background: statusColor,
+                                                                display: "inline-block"
+                                                            }} />
+                                                            {item.statusText}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Clean Recommendations */}
+                                    {cat.recommendations.length > 0 && (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: cat.items.length > 0 ? "4px" : "0" }}>
+                                            <div style={{ fontSize: "9px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                                Rekomendasi Lapangan
+                                            </div>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                                {cat.recommendations.map((rec, idx) => (
+                                                    <div 
+                                                        key={idx} 
+                                                        style={{ 
+                                                            fontSize: "10px", 
+                                                            color: "var(--text-2)", 
+                                                            lineHeight: 1.4,
+                                                            paddingLeft: "10px",
+                                                            position: "relative"
+                                                        }}
+                                                    >
+                                                        <span style={{ 
+                                                            position: "absolute", 
+                                                            left: "0", 
+                                                            color: "var(--text-3)" 
+                                                        }}>•</span>
+                                                        {rec}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            }
+
             function EditModal({ draft, onClose, onSaved }) {
                 const [content, setContent] = React.useState(
                     draft.content || "",
@@ -4769,10 +5263,8 @@
                                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                                         {item.resource_mapping && (
                                             <div>
-                                                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 4 }}>Resource Mapping</div>
-                                                <div style={{ fontSize: 11, color: "var(--text-1)", lineHeight: 1.5, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 12px", whiteSpace: "pre-wrap" }}>
-                                                    {item.resource_mapping}
-                                                </div>
+                                                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-2)", marginBottom: 6 }}>Resource Mapping</div>
+                                                <ResourceMappingViewer text={item.resource_mapping} />
                                             </div>
                                         )}
                                         {item.action_priorities && item.action_priorities.length > 0 && (
@@ -4791,7 +5283,7 @@
                                                             <div key={i} style={{ display: "grid", gridTemplateColumns: "70px 1fr 80px", padding: "7px 10px", borderBottom: i < item.action_priorities.length - 1 ? "1px solid var(--border)" : "none" }}>
                                                                 <span style={{ fontSize: 10, fontWeight: 700, color: pColor, fontFamily: "var(--mono)" }}>{prio}</span>
                                                                 <span style={{ fontSize: 10, color: "var(--text-1)", lineHeight: 1.4 }}>{ap.action || ap.description || JSON.stringify(ap)}</span>
-                                                                <span style={{ fontSize: 9, color: "var(--text-2)", fontFamily: "var(--mono)" }}>{ap.timeline || ap.time || "—"}</span>
+                                                                <span style={{ fontSize: 9, color: "var(--text-2)", fontFamily: "var(--mono)" }}>{ap.timeline || ap.time || (ap.timeline_hours ? `+${ap.timeline_hours} jam` : "—")}</span>
                                                             </div>
                                                         );
                                                     })}
@@ -6405,16 +6897,7 @@
                                                         >
                                                             {laporan.plan
                                                                 .resource_mapping && (
-                                                                <div
-                                                                    style={{
-                                                                        background:
-                                                                            "var(--surface-2)",
-                                                                        borderRadius: 6,
-                                                                        padding:
-                                                                            "12px 14px",
-                                                                        border: "1px solid var(--border)",
-                                                                    }}
-                                                                >
+                                                                <div>
                                                                     <div
                                                                         style={{
                                                                             fontSize: 10,
@@ -6430,19 +6913,7 @@
                                                                         Resource
                                                                         Mapping
                                                                     </div>
-                                                                    <div
-                                                                        style={{
-                                                                            fontSize: 12,
-                                                                            color: "var(--text-1)",
-                                                                            lineHeight: 1.6,
-                                                                        }}
-                                                                    >
-                                                                        {
-                                                                            laporan
-                                                                                .plan
-                                                                                .resource_mapping
-                                                                        }
-                                                                    </div>
+                                                                    <ResourceMappingViewer text={laporan.plan.resource_mapping} />
                                                                 </div>
                                                             )}
                                                             {laporan.plan

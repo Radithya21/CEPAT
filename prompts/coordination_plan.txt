@@ -16,7 +16,7 @@ Gunakan Bahasa Indonesia formal.
 
 Berikan respons HANYA dalam format JSON berikut (tanpa teks lain di luar JSON):
 {{
-  "resource_mapping": "deskripsi kebutuhan vs ketersediaan sumber daya",
+  "resource_mapping": "Pemetaan detail ketersediaan vs kebutuhan lapangan. Gunakan format poin-poin yang sangat rapi dengan baris baru (\\n) untuk memisahkan setiap kategori. Wajib gunakan format seperti ini:\n\n【 🧑‍🚒 Personel 】\n- Tersedia: ...\n- Kebutuhan: ...\n- Kekurangan: ...\n\n【 📦 Logistik 】\n- Tersedia: ...\n- Kebutuhan: ...\n- Kekurangan: ...\n\n【 🚜 Peralatan & Kendaraan 】\n- Tersedia: ...\n- Kebutuhan: ...\n- Kekurangan: ...",
   "action_priorities": [
     {{"priority": "P1", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 1}},
     {{"priority": "P1", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 2}},

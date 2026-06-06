@@ -157,7 +157,7 @@ Semua draf ini **BELUM dikirim** — masih menunggu persetujuan petugas.
 
 ### Step 6 — Approval Queue (Inti dari Human-in-the-Loop)
 
-Semua output agen masuk ke **antrian persetujuan**. Petugas BPBD membuka halaman `/approval` dan bisa:
+Semua output agen masuk ke **antrian persetujuan**. Petugas BPBD membuka tab **Queue** di dashboard utama dan bisa:
 
 - ✅ **Setujui** — item ditandai APPROVED, tercatat di audit log
 - ✏️ **Edit** — petugas bisa mengubah isi pesan sebelum menyetujui (misal: koreksi nama desa)
@@ -184,10 +184,7 @@ python dashboard/app.py
 
 Lalu buka browser:
 
-| Halaman | URL |
-|---|---|
-| Dashboard utama | `http://localhost:5000` |
-| Approval Queue | `http://localhost:5000/approval` |
+| Dashboard utama (termasuk Queue) | `http://localhost:5000` |
 
 ### 3. Demo dengan Gemini API (opsional)
 

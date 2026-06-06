@@ -259,9 +259,8 @@ def run_demo(use_api: bool = False):
     print(f"    - Draf pesan   : {stats['pending_drafts']} item")
     print(f"    - Rencana koor : {stats['pending_plans']} item")
     print(f"    - Total pending: {stats['total_pending']} item")
-    print()
-    print("  Buka dashboard di: http://localhost:5000/approval")
-    print("  Petugas dapat: [OK] Setujui / [E] Edit / [X] Tolak setiap item")
+    print("  Buka dashboard di: http://localhost:5000/")
+    print("  Petugas dapat: [OK] Setujui / [E] Edit / [X] Tolak setiap item di tab 'Queue'")
 
     # ── Ringkasan ────────────────────────────────────────────
     separator("RINGKASAN DEMO")
@@ -271,10 +270,9 @@ def run_demo(use_api: bool = False):
     print(f"  [OK] Draf pesan       : {len(drafts)}/3 dibuat")
     print(f"  [OK] Rencana koordinasi: {'OK' if plan else 'GAGAL'}")
     print(f"  [OK] Approval pending : {stats['total_pending']} item")
-    print()
     print("  [>>] Jalankan dashboard: python dashboard/app.py")
     print("  [>>] Buka browser     : http://localhost:5000")
-    print("  [>>] Approval queue   : http://localhost:5000/approval")
+    print("  [>>] Dashboard & Queue: http://localhost:5000/ (Pilih tab 'Queue' di bawah)")
     print()
 
     return {

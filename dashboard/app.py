@@ -386,7 +386,7 @@ def api_trigger_pipeline(eq_id: int):
 @app.route("/approval")
 @login_required
 def approval_queue():
-    return render_template("approval_queue.html")
+    return redirect(url_for("index"))
 
 
 # ─────────────────────────────────────────────────────────────
