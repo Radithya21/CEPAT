@@ -29,77 +29,77 @@ def _load_prompt(filename: str) -> str:
 
 # Sumber daya standar BPBD (untuk demo / hardcoded)
 DEFAULT_RESOURCES = {
-    "Personel": {
-        "Tim SAR": 2,
-        "Petugas BPBD": 15,
-        "Relawan terlatih": 30,
-        "Tenaga medis (dokter/perawat)": 8,
+    "Personnel": {
+        "SAR Team": 2,
+        "BPBD Officers": 15,
+        "Trained Volunteers": 30,
+        "Medical Staff (doctors/nurses)": 8,
     },
-    "Logistik": {
-        "Paket sembako": 500,
-        "Tenda pengungsi kapasitas 10 orang": 20,
-        "Selimut / matras": 200,
-        "Obat-obatan dasar": "1 kontainer",
-        "Air bersih (liter)": 10000,
+    "Logistics": {
+        "Food packages": 500,
+        "Refugee tents (10-person capacity)": 20,
+        "Blankets / mattresses": 200,
+        "Basic medicines": "1 container",
+        "Clean water (liters)": 10000,
     },
-    "Peralatan & Kendaraan": {
+    "Equipment & Vehicles": {
         "Excavator": 1,
-        "Ambulans": 3,
-        "Mobil rescue BPBD": 2,
-        "Perahu karet": 4,
-        "Genset portable": 5,
-        "Drone pemetaan": 1,
+        "Ambulance": 3,
+        "BPBD rescue vehicle": 2,
+        "Rubber boat": 4,
+        "Portable generator": 5,
+        "Mapping drone": 1,
     },
 }
 
 _FALLBACK_ACTIONS = {
     "CRITICAL": [
-        {"priority": "P1", "action": "Aktivasi Posko Darurat",
-         "description": "Aktifkan Pusat Komando Darurat, tetapkan Status Siaga I, koordinasikan dengan BNPB dan TNI/Polri.", "timeline_hours": 1},
-        {"priority": "P1", "action": "Evakuasi Zona Merah",
-         "description": "Evakuasi paksa warga di zona risiko tinggi: pesisir, lereng curam, dan bangunan rusak berat.", "timeline_hours": 2},
-        {"priority": "P2", "action": "Penilaian Kerusakan & Korban",
-         "description": "Kerahkan tim SAR dan medis untuk asesmen cepat jumlah korban, kerusakan infrastruktur, dan kebutuhan mendesak.", "timeline_hours": 4},
-        {"priority": "P2", "action": "Distribusi Logistik Darurat",
-         "description": "Distribusikan paket sembako, air bersih, tenda, dan obat-obatan ke posko pengungsian.", "timeline_hours": 6},
-        {"priority": "P3", "action": "Pemulihan Infrastruktur Kritis",
-         "description": "Prioritaskan perbaikan akses jalan utama, jaringan listrik, dan fasilitas kesehatan.", "timeline_hours": 24},
+        {"priority": "P1", "action": "Activate Emergency Command Post",
+         "description": "Activate the Emergency Command Center, declare Alert Level I, coordinate with BNPB and TNI/Police.", "timeline_hours": 1},
+        {"priority": "P1", "action": "Evacuate Red Zone",
+         "description": "Forced evacuation of residents in high-risk zones: coastal areas, steep slopes, and severely damaged buildings.", "timeline_hours": 2},
+        {"priority": "P2", "action": "Damage & Casualty Assessment",
+         "description": "Deploy SAR and medical teams for rapid assessment of casualties, infrastructure damage, and urgent needs.", "timeline_hours": 4},
+        {"priority": "P2", "action": "Emergency Logistics Distribution",
+         "description": "Distribute food packages, clean water, tents, and medicines to evacuation posts.", "timeline_hours": 6},
+        {"priority": "P3", "action": "Critical Infrastructure Recovery",
+         "description": "Prioritize restoration of main road access, electricity network, and health facilities.", "timeline_hours": 24},
     ],
     "HIGH": [
-        {"priority": "P1", "action": "Aktivasi Tim Respons",
-         "description": "Aktifkan Status Siaga II, kerahkan tim BPBD dan koordinasi dengan instansi terkait.", "timeline_hours": 1},
-        {"priority": "P1", "action": "Asesmen Lapangan Cepat",
-         "description": "Kerahkan tim SAR untuk penilaian awal kerusakan dan identifikasi korban di daerah terdampak.", "timeline_hours": 2},
-        {"priority": "P2", "action": "Pendirikan Posko Pengungsi",
-         "description": "Dirikan tenda pengungsian, siapkan logistik dasar, dan pastikan ketersediaan air bersih.", "timeline_hours": 4},
-        {"priority": "P2", "action": "Koordinasi Medis",
-         "description": "Aktifkan pos medis lapangan, koordinasi rumah sakit terdekat untuk penanganan korban luka.", "timeline_hours": 6},
-        {"priority": "P3", "action": "Pendataan & Pemulihan",
-         "description": "Lakukan pendataan warga terdampak, distribusi bantuan lanjutan, mulai pemulihan infrastruktur.", "timeline_hours": 12},
+        {"priority": "P1", "action": "Activate Response Team",
+         "description": "Activate Alert Level II, deploy BPBD teams and coordinate with relevant agencies.", "timeline_hours": 1},
+        {"priority": "P1", "action": "Rapid Field Assessment",
+         "description": "Deploy SAR teams for initial damage assessment and victim identification in affected areas.", "timeline_hours": 2},
+        {"priority": "P2", "action": "Establish Evacuation Posts",
+         "description": "Set up evacuation tents, prepare basic logistics, and ensure clean water availability.", "timeline_hours": 4},
+        {"priority": "P2", "action": "Medical Coordination",
+         "description": "Activate field medical posts, coordinate with nearest hospitals for treatment of injured victims.", "timeline_hours": 6},
+        {"priority": "P3", "action": "Data Collection & Recovery",
+         "description": "Record affected residents, distribute further aid, begin infrastructure recovery.", "timeline_hours": 12},
     ],
     "MEDIUM": [
-        {"priority": "P1", "action": "Aktivasi Kesiapsiagaan",
-         "description": "Aktifkan Status Waspada, standby tim BPBD, dan pantau perkembangan situasi.", "timeline_hours": 1},
-        {"priority": "P1", "action": "Pemantauan Gempa Susulan",
-         "description": "Koordinasi dengan BMKG untuk pemantauan gempa susulan dan potensi bahaya sekunder.", "timeline_hours": 2},
-        {"priority": "P2", "action": "Verifikasi Lapangan",
-         "description": "Kirim tim untuk verifikasi kondisi lapangan, kerusakan bangunan, dan kebutuhan bantuan.", "timeline_hours": 4},
-        {"priority": "P2", "action": "Komunikasi Publik",
-         "description": "Sebarkan informasi resmi melalui media dan media sosial untuk mencegah kepanikan.", "timeline_hours": 4},
-        {"priority": "P3", "action": "Dukungan Psikososial",
-         "description": "Siapkan layanan konseling dan dukungan psikososial untuk warga terdampak.", "timeline_hours": 12},
+        {"priority": "P1", "action": "Activate Preparedness",
+         "description": "Activate Alert Status, BPBD team standby, and monitor situation developments.", "timeline_hours": 1},
+        {"priority": "P1", "action": "Monitor Aftershocks",
+         "description": "Coordinate with BMKG to monitor aftershocks and secondary hazard potential.", "timeline_hours": 2},
+        {"priority": "P2", "action": "Field Verification",
+         "description": "Send teams to verify field conditions, building damage, and assistance needs.", "timeline_hours": 4},
+        {"priority": "P2", "action": "Public Communication",
+         "description": "Disseminate official information through media and social media to prevent panic.", "timeline_hours": 4},
+        {"priority": "P3", "action": "Psychosocial Support",
+         "description": "Prepare counseling services and psychosocial support for affected residents.", "timeline_hours": 12},
     ],
     "LOW": [
-        {"priority": "P1", "action": "Monitoring Situasi",
-         "description": "Pantau perkembangan situasi secara berkala dan koordinasikan dengan BMKG.", "timeline_hours": 1},
-        {"priority": "P2", "action": "Informasi Publik",
-         "description": "Sampaikan informasi resmi agar masyarakat tidak panik dan tetap waspada.", "timeline_hours": 2},
-        {"priority": "P2", "action": "Standby Tim BPBD",
-         "description": "Pastikan tim BPBD dalam kondisi siap dan komunikasi berjalan lancar.", "timeline_hours": 3},
-        {"priority": "P3", "action": "Koordinasi Pemantauan",
-         "description": "Koordinasi dengan instansi terkait untuk pemantauan lingkungan pasca gempa.", "timeline_hours": 6},
-        {"priority": "P3", "action": "Evaluasi Kesiapsiagaan",
-         "description": "Lakukan evaluasi kesiapsiagaan dan pastikan semua SOP respons bencana siap diaktifkan.", "timeline_hours": 12},
+        {"priority": "P1", "action": "Situation Monitoring",
+         "description": "Monitor situation developments periodically and coordinate with BMKG.", "timeline_hours": 1},
+        {"priority": "P2", "action": "Public Information",
+         "description": "Convey official information so the public does not panic and remains alert.", "timeline_hours": 2},
+        {"priority": "P2", "action": "BPBD Team Standby",
+         "description": "Ensure BPBD team is ready and communication is running smoothly.", "timeline_hours": 3},
+        {"priority": "P3", "action": "Monitoring Coordination",
+         "description": "Coordinate with relevant agencies for post-earthquake environmental monitoring.", "timeline_hours": 6},
+        {"priority": "P3", "action": "Preparedness Evaluation",
+         "description": "Conduct preparedness evaluation and ensure all disaster response SOPs are ready to activate.", "timeline_hours": 12},
     ],
 }
 
@@ -132,13 +132,13 @@ class CoordinationAgent:
                 recs = [recs]
         recs_text = "\n".join(f"  {i+1}. {r}" for i, r in enumerate(recs)) if recs else "  —"
         return (
-            f"Lokasi         : {sitrep.get('location_desc', '—')}\n"
-            f"Waktu          : {sitrep.get('eq_timestamp', '—')}\n"
-            f"Magnitudo      : M{sitrep.get('magnitude', '—')} SR\n"
-            f"Level Risiko   : {sitrep.get('risk_level', '—')}\n"
-            f"Ringkasan      : {sitrep.get('summary', '—')}\n"
-            f"Wilayah Terdampak: {sitrep.get('affected_areas', '—')}\n"
-            f"Rekomendasi    :\n{recs_text}"
+            f"Location       : {sitrep.get('location_desc', '—')}\n"
+            f"Time           : {sitrep.get('eq_timestamp', '—')}\n"
+            f"Magnitude      : M{sitrep.get('magnitude', '—')}\n"
+            f"Risk Level     : {sitrep.get('risk_level', '—')}\n"
+            f"Summary        : {sitrep.get('summary', '—')}\n"
+            f"Affected Areas : {sitrep.get('affected_areas', '—')}\n"
+            f"Recommendations:\n{recs_text}"
         )
 
     def _format_resources(self) -> str:
@@ -245,40 +245,40 @@ class CoordinationAgent:
 
         # Kebutuhan standar berdasarkan tingkat risiko gempa
         if risk == "CRITICAL":
-            req_p = {"Tim SAR": 10, "Petugas BPBD": 50, "Relawan terlatih": 100, "Tenaga medis (dokter/perawat)": 20}
-            req_l = {"Paket sembako": 2000, "Tenda pengungsi kapasitas 10 orang": 100, "Selimut / matras": 800, "Obat-obatan dasar": "5 kontainer", "Air bersih (liter)": 50000}
-            req_e = {"Excavator": 5, "Ambulans": 10, "Mobil rescue BPBD": 5, "Perahu karet": 10, "Genset portable": 15, "Drone pemetaan": 2}
+            req_p = {"SAR Team": 10, "BPBD Officers": 50, "Trained Volunteers": 100, "Medical Staff (doctors/nurses)": 20}
+            req_l = {"Food packages": 2000, "Refugee tents (10-person capacity)": 100, "Blankets / mattresses": 800, "Basic medicines": "5 containers", "Clean water (liters)": 50000}
+            req_e = {"Excavator": 5, "Ambulance": 10, "BPBD rescue vehicle": 5, "Rubber boat": 10, "Portable generator": 15, "Mapping drone": 2}
         elif risk == "HIGH":
-            req_p = {"Tim SAR": 5, "Petugas BPBD": 30, "Relawan terlatih": 60, "Tenaga medis (dokter/perawat)": 12}
-            req_l = {"Paket sembako": 1000, "Tenda pengungsi kapasitas 10 orang": 50, "Selimut / matras": 400, "Obat-obatan dasar": "3 kontainer", "Air bersih (liter)": 25000}
-            req_e = {"Excavator": 3, "Ambulans": 6, "Mobil rescue BPBD": 3, "Perahu karet": 6, "Genset portable": 10, "Drone pemetaan": 2}
+            req_p = {"SAR Team": 5, "BPBD Officers": 30, "Trained Volunteers": 60, "Medical Staff (doctors/nurses)": 12}
+            req_l = {"Food packages": 1000, "Refugee tents (10-person capacity)": 50, "Blankets / mattresses": 400, "Basic medicines": "3 containers", "Clean water (liters)": 25000}
+            req_e = {"Excavator": 3, "Ambulance": 6, "BPBD rescue vehicle": 3, "Rubber boat": 6, "Portable generator": 10, "Mapping drone": 2}
         elif risk == "MEDIUM":
-            req_p = {"Tim SAR": 2, "Petugas BPBD": 15, "Relawan terlatih": 30, "Tenaga medis (dokter/perawat)": 8}
-            req_l = {"Paket sembako": 500, "Tenda pengungsi kapasitas 10 orang": 20, "Selimut / matras": 200, "Obat-obatan dasar": "1 kontainer", "Air bersih (liter)": 10000}
-            req_e = {"Excavator": 1, "Ambulans": 3, "Mobil rescue BPBD": 2, "Perahu karet": 4, "Genset portable": 5, "Drone pemetaan": 1}
+            req_p = {"SAR Team": 2, "BPBD Officers": 15, "Trained Volunteers": 30, "Medical Staff (doctors/nurses)": 8}
+            req_l = {"Food packages": 500, "Refugee tents (10-person capacity)": 20, "Blankets / mattresses": 200, "Basic medicines": "1 container", "Clean water (liters)": 10000}
+            req_e = {"Excavator": 1, "Ambulance": 3, "BPBD rescue vehicle": 2, "Rubber boat": 4, "Portable generator": 5, "Mapping drone": 1}
         else: # LOW
-            req_p = {"Tim SAR": 1, "Petugas BPBD": 5, "Relawan terlatih": 10, "Tenaga medis (dokter/perawat)": 2}
-            req_l = {"Paket sembako": 100, "Tenda pengungsi kapasitas 10 orang": 5, "Selimut / matras": 50, "Obat-obatan dasar": "0 kontainer", "Air bersih (liter)": 2000}
-            req_e = {"Excavator": 0, "Ambulans": 1, "Mobil rescue BPBD": 1, "Perahu karet": 1, "Genset portable": 2, "Drone pemetaan": 0}
+            req_p = {"SAR Team": 1, "BPBD Officers": 5, "Trained Volunteers": 10, "Medical Staff (doctors/nurses)": 2}
+            req_l = {"Food packages": 100, "Refugee tents (10-person capacity)": 5, "Blankets / mattresses": 50, "Basic medicines": "0 containers", "Clean water (liters)": 2000}
+            req_e = {"Excavator": 0, "Ambulance": 1, "BPBD rescue vehicle": 1, "Rubber boat": 1, "Portable generator": 2, "Mapping drone": 0}
 
         fallback_data = {
-            "Personel": {
-                "Ketersediaan": DEFAULT_RESOURCES["Personel"],
-                "Kebutuhan": req_p
+            "Personnel": {
+                "Available": DEFAULT_RESOURCES["Personnel"],
+                "Required": req_p
             },
-            "Logistik": {
-                "Ketersediaan": DEFAULT_RESOURCES["Logistik"],
-                "Kebutuhan": req_l
+            "Logistics": {
+                "Available": DEFAULT_RESOURCES["Logistics"],
+                "Required": req_l
             },
-            "Peralatan & Kendaraan": {
-                "Ketersediaan": DEFAULT_RESOURCES["Peralatan & Kendaraan"],
-                "Kebutuhan": req_e
+            "Equipment & Vehicles": {
+                "Available": DEFAULT_RESOURCES["Equipment & Vehicles"],
+                "Required": req_e
             }
         }
 
         resource_mapping = self._format_resource_mapping_result(fallback_data)
         actions = _FALLBACK_ACTIONS.get(risk, _FALLBACK_ACTIONS["MEDIUM"])
-        timeline_map = {"CRITICAL": "72 jam intensif", "HIGH": "48 jam intensif", "MEDIUM": "24 jam monitoring", "LOW": "12 jam pantau"}
+        timeline_map = {"CRITICAL": "72 hours intensive", "HIGH": "48 hours intensive", "MEDIUM": "24 hours monitoring", "LOW": "12 hours monitoring"}
 
         return {
             "resource_mapping":   resource_mapping,
@@ -324,7 +324,7 @@ class CoordinationAgent:
                 a_copy = a.copy()
                 hours = a_copy.get("timeline_hours")
                 if hours is not None:
-                    a_copy["timeline"] = f"+{hours} jam"
+                    a_copy["timeline"] = f"+{hours} hours"
                 elif a_copy.get("timeline") is None:
                     a_copy["timeline"] = "—"
                 formatted_actions.append(a_copy)

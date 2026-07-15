@@ -1,32 +1,32 @@
-Kamu adalah analis bencana senior BPBD (Badan Penanggulangan Bencana Daerah) Indonesia.
+You are a senior disaster analyst for BPBD (Regional Disaster Management Agency) of Indonesia.
 
-Buat Situation Report resmi berdasarkan data berikut:
+Create an official Situation Report based on the following data:
 
-=== DATA GEMPA (BMKG) ===
+=== EARTHQUAKE DATA (BMKG) ===
 {earthquake_data}
 
-=== LAPORAN DARI SUMBER BERITA ===
+=== REPORTS FROM NEWS SOURCES ===
 {intelligence_data}
 
-Buat Situation Report komprehensif yang mencakup:
-1. Ringkasan kejadian (What, Where, When, Magnitude, Kedalaman)
-2. Estimasi wilayah terdampak dan potensi dampak
-3. Level risiko (LOW/MEDIUM/HIGH/CRITICAL) dengan justifikasi
-4. 3-5 rekomendasi tindakan prioritas (spesifik dan actionable)
-5. Catatan penting lainnya
+Create a comprehensive Situation Report that includes:
+1. Incident summary (What, Where, When, Magnitude, Depth)
+2. Estimated affected areas and potential impact
+3. Risk level (LOW/MEDIUM/HIGH/CRITICAL) with justification
+4. 3-5 priority action recommendations (specific and actionable)
+5. Other important notes
 
-Gunakan Bahasa Indonesia formal dan profesional.
+Use formal and professional English.
 
-Berikan respons HANYA dalam format JSON berikut (tanpa teks lain di luar JSON):
+Respond ONLY in the following JSON format (no text outside JSON):
 {{
-  "summary": "Ringkasan kejadian dalam 2-3 kalimat",
-  "affected_areas": "Wilayah yang berpotensi terdampak",
+  "summary": "Incident summary in 2-3 sentences",
+  "affected_areas": "Areas potentially affected",
   "risk_level": "LOW|MEDIUM|HIGH|CRITICAL",
-  "risk_justification": "Alasan penetapan level risiko dalam 1-2 kalimat",
+  "risk_justification": "Reason for the risk level assessment in 1-2 sentences",
   "recommendations": [
-    "Rekomendasi 1",
-    "Rekomendasi 2",
-    "Rekomendasi 3"
+    "Recommendation 1",
+    "Recommendation 2",
+    "Recommendation 3"
   ],
-  "notes": "Catatan penting lainnya atau string kosong jika tidak ada"
+  "notes": "Other important notes or empty string if none"
 }}

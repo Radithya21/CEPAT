@@ -1,28 +1,28 @@
-Kamu adalah koordinator lapangan BPBD (Badan Penanggulangan Bencana Daerah) Indonesia.
+You are a field coordinator for BPBD (Regional Disaster Management Agency) of Indonesia.
 
-Berdasarkan Situation Report bencana gempa berikut:
+Based on the following earthquake Situation Report:
 === SITUATION REPORT ===
 {situation_report}
 
-=== SUMBER DAYA YANG TERSEDIA ===
+=== AVAILABLE RESOURCES ===
 {resources}
 
-Buat rencana koordinasi yang mencakup:
-1. Mapping kebutuhan vs ketersediaan sumber daya (deskripsi singkat dan jelas)
-2. Tepat 5 aksi prioritas dengan level P1 (mendesak, ≤2j)/P2 (penting, ≤6j)/P3 (pendukung, ≤24j)
-3. Estimasi timeline keseluruhan respons darurat
+Create a coordination plan that includes:
+1. Mapping of resource needs vs availability (brief and clear description)
+2. Exactly 5 priority actions with level P1 (urgent, ≤2h)/P2 (important, ≤6h)/P3 (support, ≤24h)
+3. Estimated overall emergency response timeline
 
-Gunakan Bahasa Indonesia formal.
+Use formal and professional English.
 
-Berikan respons HANYA dalam format JSON berikut (tanpa teks lain di luar JSON):
+Respond ONLY in the following JSON format (no text outside JSON):
 {{
-  "resource_mapping": "Pemetaan detail ketersediaan vs kebutuhan lapangan. Gunakan format poin-poin yang sangat rapi dengan baris baru (\\n) untuk memisahkan setiap kategori. Wajib gunakan format seperti ini:\n\n【 🧑‍🚒 Personel 】\n- Tersedia: ...\n- Kebutuhan: ...\n- Kekurangan: ...\n\n【 📦 Logistik 】\n- Tersedia: ...\n- Kebutuhan: ...\n- Kekurangan: ...\n\n【 🚜 Peralatan & Kendaraan 】\n- Tersedia: ...\n- Kebutuhan: ...\n- Kekurangan: ...",
+  "resource_mapping": "Detailed mapping of availability vs field needs. Use a well-organized bullet format with newlines (\\n) to separate each category. Must use this format:\n\n【 🧑‍🚒 Personnel 】\n- Available: ...\n- Required: ...\n- Shortage: ...\n\n【 📦 Logistics 】\n- Available: ...\n- Required: ...\n- Shortage: ...\n\n【 🚜 Equipment & Vehicles 】\n- Available: ...\n- Required: ...\n- Shortage: ...",
   "action_priorities": [
-    {{"priority": "P1", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 1}},
-    {{"priority": "P1", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 2}},
-    {{"priority": "P2", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 4}},
-    {{"priority": "P2", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 6}},
-    {{"priority": "P3", "action": "nama aksi singkat", "description": "detail tindakan spesifik", "timeline_hours": 12}}
+    {{"priority": "P1", "action": "short action name", "description": "specific action details", "timeline_hours": 1}},
+    {{"priority": "P1", "action": "short action name", "description": "specific action details", "timeline_hours": 2}},
+    {{"priority": "P2", "action": "short action name", "description": "specific action details", "timeline_hours": 4}},
+    {{"priority": "P2", "action": "short action name", "description": "specific action details", "timeline_hours": 6}},
+    {{"priority": "P3", "action": "short action name", "description": "specific action details", "timeline_hours": 12}}
   ],
-  "estimated_timeline": "perkiraan durasi total respons darurat"
+  "estimated_timeline": "estimated total duration of emergency response"
 }}

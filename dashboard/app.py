@@ -275,14 +275,22 @@ def api_force_poll():
 @login_required
 def api_feed():
     try:
+        # 1. Fetch memory-based logs from Orchestrator
+        feed = list(orchestrator.activity_logs) if hasattr(orchestrator, "activity_logs") else []
+
+        # 2. Fetch database records for historical backfill
+        db_feed = []
         eqs = db.get_all_earthquakes(limit=10)
         intel = db.get_all_intelligence_reports(limit=15)
         drafts = db.get_all_communication_drafts(limit=10)
+        
+        # situation reports and coordination plans
+        sitreps = db.get_all_situation_reports(limit=10)
+        plans = db.get_all_coordination_plans(limit=10)
 
-        feed = []
         for e in eqs:
             if e["status"] != "NEW":
-                feed.append(
+                db_feed.append(
                     {
                         "ts": e["created_at"],
                         "ag": "Monitoring Agent",
@@ -292,7 +300,7 @@ def api_feed():
                 )
         for i in intel:
             st = "ok" if i["credibility_status"] == "VALID" else "wait"
-            feed.append(
+            db_feed.append(
                 {
                     "ts": i["created_at"],
                     "ag": "Intelligence Agent",
@@ -301,7 +309,7 @@ def api_feed():
                 }
             )
         for d in drafts:
-            feed.append(
+            db_feed.append(
                 {
                     "ts": d["created_at"],
                     "ag": "Communication Agent",
@@ -309,9 +317,37 @@ def api_feed():
                     "d": f"Penyusunan draf peringatan selesai (ID: {d['id']})",
                 }
             )
+        for s in sitreps:
+            db_feed.append(
+                {
+                    "ts": s["created_at"],
+                    "ag": "Analysis Agent",
+                    "st": "ok",
+                    "d": f"Situation Report dibuat. Risk: {s['risk_level']}",
+                }
+            )
+        for p in plans:
+            db_feed.append(
+                {
+                    "ts": p["created_at"],
+                    "ag": "Coordination Agent",
+                    "st": "ok",
+                    "d": f"Rencana koordinasi dibuat (Status: {p['status']})",
+                }
+            )
 
-        feed.sort(key=lambda x: x["ts"], reverse=True)
-        return jsonify({"status": "success", "data": feed[:15]})
+        # Remove duplicate log descriptions per agent within the combined list
+        combined = feed + db_feed
+        seen = set()
+        unique_feed = []
+        for item in combined:
+            key = (item["ts"][:19] if item["ts"] else "", item["ag"], item["d"])
+            if key not in seen:
+                seen.add(key)
+                unique_feed.append(item)
+
+        unique_feed.sort(key=lambda x: x["ts"], reverse=True)
+        return jsonify({"status": "success", "data": unique_feed[:30]})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

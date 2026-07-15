@@ -207,6 +207,14 @@
                 0%, 100% { opacity: 1; }
                 50%       { opacity: 0.3; }
             }
+            @keyframes pulseDot {
+                0%, 100% { opacity: 1; transform: scale(1); }
+                50%       { opacity: 0.5; transform: scale(0.75); }
+            }
+            @keyframes shimmer {
+                0%   { transform: translateX(-100%); }
+                100% { transform: translateX(200%); }
+            }
 
             /* Right controls */
             .h-right {
@@ -5018,49 +5026,187 @@
                                     </div>
                                     <EarthquakeChart theme={tweaks.uiTheme} />
                                 </div>
-                                <div className="card feed-card">
-                                    <div
-                                        className="card-head"
-                                        style={{ paddingBottom: 8 }}
-                                    >
-                                        <span className="card-head-title">
-                                            Agent Activity
-                                        </span>
-                                        <span className="card-head-meta">
-                                            LIVE
-                                        </span>
-                                    </div>
-                                    <div className="feed-body">
-                                        {agentFeed.map((r, i) => (
-                                            <div className="feed-row" key={i}>
-                                                <div
-                                                    className={`f-status ${r.st}`}
-                                                >
-                                                    {r.st === "ok" && "✓"}
-                                                    {r.st === "proc" && (
-                                                        <div className="f-proc-dots">
-                                                            <i />
-                                                            <i />
-                                                            <i />
-                                                        </div>
+                                <div className="card feed-card" style={{ padding: 0 }}>
+                                    {/* ── Agent Activity Header ── */}
+                                    {(() => {
+                                        const [activeFilter, setActiveFilter] = React.useState("ALL");
+                                        const filters = ["MON", "INTEL", "ANAL", "COMM", "COORD"];
+
+                                        // Map agentFeed entries to the 6 agent slots
+                                        const AGENTS = [
+                                            { key: "OR",    label: "Orchestrator",  abbr: "OR",   color: "#8b949e", filterKey: null   },
+                                            { key: "MON",   label: "Monitoring",    abbr: "MN",   color: "#58a6ff", filterKey: "MON"  },
+                                            { key: "INTEL", label: "Intelligence",  abbr: "IT",   color: "#a371f7", filterKey: "INTEL"},
+                                            { key: "ANAL",  label: "Analysis",      abbr: "AN",   color: "#e3b341", filterKey: "ANAL" },
+                                            { key: "COMM",  label: "Communication", abbr: "CM",   color: "#3fb950", filterKey: "COMM" },
+                                            { key: "COORD", label: "Coordination",  abbr: "CO",   color: "#f78166", filterKey: "COORD"},
+                                        ];
+
+                                        // Build a per-agent latest state from agentFeed
+                                        const agentState = {};
+                                        (agentFeed || []).forEach(r => {
+                                            const agLower = (r.ag || "").toLowerCase();
+                                            let slot = null;
+                                            if (agLower.includes("orchestrat")) slot = "OR";
+                                            else if (agLower.includes("monitor"))   slot = "MON";
+                                            else if (agLower.includes("intellig"))  slot = "INTEL";
+                                            else if (agLower.includes("analys"))    slot = "ANAL";
+                                            else if (agLower.includes("commun"))    slot = "COMM";
+                                            else if (agLower.includes("coord"))     slot = "COORD";
+                                            if (slot && !agentState[slot]) agentState[slot] = r;
+                                        });
+
+                                        const statusLabel = (st) => {
+                                            if (st === "ok")   return "DONE";
+                                            if (st === "proc") return "RUNNING";
+                                            return "WAIT";
+                                        };
+                                        const statusColor = (st) => {
+                                            if (st === "ok")   return { bg: "rgba(63,185,80,0.12)",  text: "#3fb950", border: "rgba(63,185,80,0.28)"  };
+                                            if (st === "proc") return { bg: "rgba(88,166,255,0.12)", text: "#58a6ff", border: "rgba(88,166,255,0.28)" };
+                                            return           { bg: "rgba(139,148,158,0.1)",  text: "#8b949e", border: "rgba(139,148,158,0.2)"  };
+                                        };
+
+                                        const [selectedAgent, setSelectedAgent] = React.useState(null);
+
+                                        // Filtered log entries
+                                        const filteredFeed = (agentFeed || []).filter(r => {
+                                            if (activeFilter === "ALL") return true;
+                                            const agLower = (r.ag || "").toLowerCase();
+                                            if (activeFilter === "MON"   && agLower.includes("monitor"))   return true;
+                                            if (activeFilter === "INTEL" && agLower.includes("intellig"))  return true;
+                                            if (activeFilter === "ANAL"  && agLower.includes("analys"))    return true;
+                                            if (activeFilter === "COMM"  && agLower.includes("commun"))    return true;
+                                            if (activeFilter === "COORD" && agLower.includes("coord"))     return true;
+                                            return false;
+                                        });
+
+                                        const displayFeed = selectedAgent
+                                            ? (agentFeed || []).filter(r => {
+                                                const agLower = (r.ag || "").toLowerCase();
+                                                if (selectedAgent === "OR"    && agLower.includes("orchestrat")) return true;
+                                                if (selectedAgent === "MON"   && agLower.includes("monitor"))    return true;
+                                                if (selectedAgent === "INTEL" && agLower.includes("intellig"))   return true;
+                                                if (selectedAgent === "ANAL"  && agLower.includes("analys"))     return true;
+                                                if (selectedAgent === "COMM"  && agLower.includes("commun"))     return true;
+                                                if (selectedAgent === "COORD" && agLower.includes("coord"))      return true;
+                                                return false;
+                                              })
+                                            : filteredFeed;
+
+                                        return (
+                                            <div>
+                                                {/* Header */}
+                                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 14px", borderBottom: "1px solid var(--border)" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                        <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#3fb950", display: "inline-block", boxShadow: "0 0 0 3px rgba(63,185,80,0.2)", animation: "pulseDot 2s infinite" }} />
+                                                        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>Agent Activity</span>
+                                                    </div>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                                        {filters.map(f => (
+                                                            <button key={f}
+                                                                onClick={() => { setActiveFilter(f === activeFilter ? "ALL" : f); setSelectedAgent(null); }}
+                                                                style={{
+                                                                    fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 4,
+                                                                    border: `1px solid ${activeFilter === f ? "rgba(88,166,255,0.4)" : "var(--border)"}`,
+                                                                    background: activeFilter === f ? "rgba(88,166,255,0.1)" : "transparent",
+                                                                    color: activeFilter === f ? "#58a6ff" : "var(--text-3)",
+                                                                    cursor: "pointer", letterSpacing: "0.05em", transition: "all 0.15s",
+                                                                }}
+                                                            >{f}</button>
+                                                        ))}
+                                                        <span style={{ fontSize: 11, fontWeight: 700, color: "#3fb950", letterSpacing: "0.06em", marginLeft: 4, padding: "4px 10px", borderRadius: 4, background: "rgba(63,185,80,0.1)", border: "1px solid rgba(63,185,80,0.25)" }}>LIVE</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* 6 Agent Cards 3×2 grid */}
+                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: "var(--border)", borderBottom: "1px solid var(--border)" }}>
+                                                    {AGENTS.map(ag => {
+                                                        const r = agentState[ag.key];
+                                                        const st = r ? r.st : "wait";
+                                                        const sc = statusColor(st);
+                                                        const isSelected = selectedAgent === ag.key;
+                                                        const isRunning = st === "proc";
+                                                        return (
+                                                            <div key={ag.key}
+                                                                onClick={() => setSelectedAgent(isSelected ? null : ag.key)}
+                                                                style={{
+                                                                    background: isSelected ? "var(--surface-2)" : "var(--surface)",
+                                                                    padding: "16px 18px", cursor: "pointer",
+                                                                    borderLeft: isSelected ? `3px solid ${ag.color}` : "3px solid transparent",
+                                                                    transition: "all 0.15s",
+                                                                    position: "relative", overflow: "hidden",
+                                                                }}
+                                                            >
+                                                                {/* Running shimmer */}
+                                                                {isRunning && (
+                                                                    <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, transparent 0%, rgba(88,166,255,0.04) 50%, transparent 100%)`, animation: "shimmer 1.5s infinite", pointerEvents: "none" }} />
+                                                                )}
+                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                                                        <span style={{ fontSize: 10, fontWeight: 800, color: ag.color, fontFamily: "var(--mono)", background: `${ag.color}18`, border: `1px solid ${ag.color}35`, padding: "2px 6px", borderRadius: 3 }}>{ag.abbr}</span>
+                                                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{ag.label}</span>
+                                                                    </div>
+                                                                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", padding: "3px 8px", borderRadius: 3, background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`, display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+                                                                        {isRunning && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#58a6ff", display: "inline-block", animation: "pulseDot 1s infinite" }} />}
+                                                                        {statusLabel(st)}
+                                                                    </span>
+                                                                </div>
+                                                                <div style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.6, minHeight: 40, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                                                                    {r ? r.d : "Standby / No activity"}
+                                                                </div>
+                                                                {r && <div style={{ fontSize: 10, color: "var(--text-3)", fontFamily: "var(--mono)", marginTop: 6 }}>{r.ts}</div>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                {/* Log Timeline */}
+                                                <div style={{ padding: "12px 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                                    <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                                                        {selectedAgent ? (
+                                                            <span>Filtering: <strong style={{ color: "var(--text-2)" }}>{AGENTS.find(a => a.key === selectedAgent)?.label}</strong></span>
+                                                        ) : activeFilter !== "ALL" ? (
+                                                            <span>Filtering: <strong style={{ color: "var(--text-2)" }}>{activeFilter}</strong></span>
+                                                        ) : "All agents"}
+                                                    </span>
+                                                    {(selectedAgent || activeFilter !== "ALL") && (
+                                                        <button onClick={() => { setSelectedAgent(null); setActiveFilter("ALL"); }} style={{ fontSize: 12, background: "none", border: "none", color: "var(--blue)", cursor: "pointer", padding: 0 }}>Show All Logs</button>
                                                     )}
-                                                    {r.st === "wait" && "○"}
                                                 </div>
-                                                <div className="f-info">
-                                                    <div className="f-agent">
-                                                        {r.ag}
-                                                    </div>
-                                                    <div className="f-detail">
-                                                        {r.d}
-                                                    </div>
-                                                </div>
-                                                <div className="f-time">
-                                                    {r.ts}
+                                                <div style={{ maxHeight: 220, overflowY: "auto", padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 0 }}>
+                                                    {displayFeed.length === 0 ? (
+                                                        <div style={{ fontSize: 13, color: "var(--text-3)", padding: "16px 0", textAlign: "center" }}>No log entries.</div>
+                                                    ) : displayFeed.map((r, i) => {
+                                                        const sc = statusColor(r.st);
+                                                        const isLast = i === displayFeed.length - 1;
+                                                        return (
+                                                            <div key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "10px 0", borderBottom: isLast ? "none" : "1px solid var(--border)", position: "relative" }}>
+                                                                {/* Timeline dot + line */}
+                                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: 18 }}>
+                                                                    <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${sc.border}`, background: sc.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                                                                        {r.st === "ok" && <span style={{ fontSize: 9, color: sc.text, fontWeight: 900 }}>✓</span>}
+                                                                        {r.st === "proc" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: sc.text, display: "block", animation: "pulseDot 1s infinite" }} />}
+                                                                    </div>
+                                                                    {!isLast && <div style={{ width: 1, flex: 1, background: "var(--border)", marginTop: 4 }} />}
+                                                                </div>
+                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                                                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{r.ag}</span>
+                                                                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}>{statusLabel(r.st)}</span>
+                                                                    </div>
+                                                                    <div style={{ fontSize: 12, color: "var(--text-2)", lineHeight: 1.5 }}>{r.d}</div>
+                                                                </div>
+                                                                <div style={{ fontSize: 11, color: "var(--text-3)", fontFamily: "var(--mono)", flexShrink: 0, paddingTop: 2 }}>{r.ts}</div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })()}
                                 </div>
+
                             </div>
                             <div className="col">
                                 <div className="card appr-panel">
@@ -5380,6 +5526,7 @@
                 onAct,
                 onEdit,
                 fetchData,
+                onSelectEq,
             }) {
                 const [filter, setFilter] = useState("Semua");
                 const [allDrafts, setAllDrafts] = useState([]);
@@ -5652,8 +5799,29 @@
                                                             M{group.magnitude.toFixed(1)}
                                                         </span>
                                                         <div className="ag-meta">
-                                                            <div className="ag-title">
-                                                                {group.location}
+                                                            <div className="ag-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                                <span>{group.location}</span>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        e.preventDefault();
+                                                                        onSelectEq && onSelectEq(group);
+                                                                    }}
+                                                                    className="view-report-btn"
+                                                                    style={{
+                                                                        fontSize: 9,
+                                                                        fontWeight: 700,
+                                                                        padding: "2px 6px",
+                                                                        borderRadius: 4,
+                                                                        border: "1px solid rgba(88, 166, 255, 0.3)",
+                                                                        background: "rgba(88, 166, 255, 0.08)",
+                                                                        color: "#58a6ff",
+                                                                        cursor: "pointer",
+                                                                        transition: "all 0.15s",
+                                                                    }}
+                                                                >
+                                                                    View Report
+                                                                </button>
                                                             </div>
                                                             <div className="ag-sub">
                                                                 {fmtTime(group.latest)} · {draftsCount} drafts · {plansCount} plans
@@ -5866,10 +6034,8 @@
                 );
             }
 
-            function PageLaporan() {
+            function PageLaporan({ selectedEq, setSelectedEq, laporan, setLaporan, fetchData }) {
                 const [majorEqs, setMajorEqs] = useState([]);
-                const [selectedEq, setSelectedEq] = useState(null);
-                const [laporan, setLaporan] = useState(null);
                 const [activeTab, setActiveTab] = useState("sitrep");
                 const [loading, setLoading] = useState(false);
                 const [laporanToast, setLaporanToast] = useState(null);
@@ -5878,6 +6044,75 @@
                     setLaporanToast(msg);
                     setTimeout(() => setLaporanToast(null), 2000);
                 };
+
+                const approveDraft = async (id) => {
+                    try {
+                        await fetch(`/api/approval/draft/${id}/approve`, { method: "POST" });
+                        showLaporanToast("Draft approved!");
+                        if (selectedEq) {
+                            const res = await fetch(`/api/laporan/${selectedEq.id}`);
+                            if (res.ok) {
+                                const j = await res.json();
+                                setLaporan(j.data);
+                            }
+                        }
+                        fetchData && fetchData();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                const rejectDraft = async (id) => {
+                    try {
+                        await fetch(`/api/approval/draft/${id}/reject`, { method: "POST" });
+                        showLaporanToast("Draft rejected!");
+                        if (selectedEq) {
+                            const res = await fetch(`/api/laporan/${selectedEq.id}`);
+                            if (res.ok) {
+                                const j = await res.json();
+                                setLaporan(j.data);
+                            }
+                        }
+                        fetchData && fetchData();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                const approvePlan = async (id) => {
+                    try {
+                        await fetch(`/api/approval/plan/${id}/approve`, { method: "POST" });
+                        showLaporanToast("Coordination Plan approved!");
+                        if (selectedEq) {
+                            const res = await fetch(`/api/laporan/${selectedEq.id}`);
+                            if (res.ok) {
+                                const j = await res.json();
+                                setLaporan(j.data);
+                            }
+                        }
+                        fetchData && fetchData();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                const rejectPlan = async (id) => {
+                    try {
+                        await fetch(`/api/approval/plan/${id}/reject`, { method: "POST" });
+                        showLaporanToast("Coordination Plan rejected!");
+                        if (selectedEq) {
+                            const res = await fetch(`/api/laporan/${selectedEq.id}`);
+                            if (res.ok) {
+                                const j = await res.json();
+                                setLaporan(j.data);
+                            }
+                        }
+                        fetchData && fetchData();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
                 useEffect(() => {
                     fetch("/api/earthquakes/major")
                         .then((r) => r.json())
@@ -6315,7 +6550,7 @@
                                     </div>
                                     <div className="laporan-empty-sub">
                                         Full report will be displayed here
-                                        setelah memilih salah satu kejadian.
+                                        after selecting an event.
                                     </div>
                                 </div>
                             ) : (
@@ -6387,15 +6622,15 @@
                                                             <path d="M2 10h8M6 2v6M4 6l2 2 2-2" strokeLinecap="round" strokeLinejoin="round"/>
                                                         </svg>
                                                     )}
-                                                    {pdfDownloading ? "Unduh..." : "PDF"}
+                                                    {pdfDownloading ? "Downloading..." : "PDF"}
                                                 </button>
                                             </>
                                         </div>
                                     </div>
                                     <div className="laporan-tabs">
                                         {[
-                                            ["sitrep", I.report, "Situasi"],
-                                            ["komunikasi", I.comm, "Komunikasi"],
+                                            ["sitrep", I.report, "Situation"],
+                                            ["komunikasi", I.comm, "Communication"],
                                             ["koordinasi", I.coord, "Coordination"],
                                         ].map(([k, icon, label]) => (
                                             <button
@@ -6461,7 +6696,7 @@
                                                             }}
                                                         >
                                                             Situation report
-                                                            belum tersedia.
+                                                            not yet available.
                                                         </div>
                                                     ) : (
                                                         <div
@@ -6494,7 +6729,7 @@
                                                                         marginBottom: 6,
                                                                     }}
                                                                 >
-                                                                    Ringkasan
+                                                                    Summary
                                                                 </div>
                                                                 <div
                                                                     style={{
@@ -6541,17 +6776,13 @@
                                                                             fontWeight: 700,
                                                                             fontFamily:
                                                                                 "var(--mono)",
-                                                                            color:
-                                                                                laporan
-                                                                                    .sitrep
-                                                                                    .risk_level ===
-                                                                                    "TINGGI" ||
-                                                                                laporan
-                                                                                    .sitrep
-                                                                                    .risk_level ===
-                                                                                    "KRITIS"
-                                                                                    ? "var(--red)"
-                                                                                    : "var(--orange)",
+                                                                            color: (() => {
+                                                                                const r = (laporan.sitrep.risk_level || "").toUpperCase();
+                                                                                if (r.includes("LOW") || r.includes("RENDAH")) return "var(--green)";
+                                                                                if (r.includes("MEDIUM") || r.includes("SEDANG")) return "var(--orange)";
+                                                                                if (r.includes("HIGH") || r.includes("TINGGI") || r.includes("CRITICAL") || r.includes("KRITIS")) return "var(--red)";
+                                                                                return "var(--text-2)";
+                                                                            })(),
                                                                         }}
                                                                     >
                                                                         {laporan
@@ -6581,8 +6812,8 @@
                                                                             marginBottom: 4,
                                                                         }}
                                                                     >
-                                                                        Dibuat
-                                                                        oleh
+                                                                        Generated
+                                                                        By
                                                                     </div>
                                                                     <div
                                                                         style={{
@@ -6669,7 +6900,7 @@
                                                                                 marginBottom: 8,
                                                                             }}
                                                                         >
-                                                                            Rekomendasi
+                                                                            Recommendations
                                                                         </div>
                                                                         {laporan.sitrep.recommendations.map(
                                                                             (
@@ -6737,8 +6968,8 @@
                                                                     "20px 0",
                                                             }}
                                                         >
-                                                            Draft komunikasi
-                                                            belum tersedia.
+                                                            Communication draft
+                                                            not yet available.
                                                         </div>
                                                     ) : (
                                                         laporan.drafts.map(
@@ -6792,6 +7023,42 @@
                                                                                 gap: 8,
                                                                             }}
                                                                         >
+                                                                            {draft.status === "DRAFT" && (
+                                                                                <div style={{ display: "flex", gap: 4 }}>
+                                                                                    <button
+                                                                                        onClick={() => approveDraft(draft.id)}
+                                                                                        style={{
+                                                                                            padding: "3px 8px",
+                                                                                            fontSize: 9,
+                                                                                            fontWeight: 600,
+                                                                                            borderRadius: 4,
+                                                                                            cursor: "pointer",
+                                                                                            background: "rgba(63,185,80,0.1)",
+                                                                                            color: "var(--green)",
+                                                                                            border: "1px solid rgba(63,185,80,0.25)",
+                                                                                            transition: "all 0.15s",
+                                                                                        }}
+                                                                                    >
+                                                                                        Approve
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => rejectDraft(draft.id)}
+                                                                                        style={{
+                                                                                            padding: "3px 8px",
+                                                                                            fontSize: 9,
+                                                                                            fontWeight: 600,
+                                                                                            borderRadius: 4,
+                                                                                            cursor: "pointer",
+                                                                                            background: "rgba(248,81,73,0.1)",
+                                                                                            color: "var(--red)",
+                                                                                            border: "1px solid rgba(248,81,73,0.25)",
+                                                                                            transition: "all 0.15s",
+                                                                                        }}
+                                                                                    >
+                                                                                        Reject
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
                                                                             <span
                                                                                 style={{
                                                                                     fontSize: 9,
@@ -6845,7 +7112,7 @@
                                                                                     <rect x="3.5" y="3.5" width="8" height="9" rx="1.2" />
                                                                                     <path d="M10.5 3.5V2A1.5 1.5 0 0 0 9 0.5H3A1.5 1.5 0 0 0 1.5 2v7.5A1.5 1.5 0 0 0 3 11h1.5" strokeLinecap="round" />
                                                                                 </svg>
-                                                                                Salin
+                                                                                Copy
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -6884,7 +7151,7 @@
                                                             }}
                                                         >
                                                             Coordination Plan
-                                                            belum tersedia.
+                                                            not yet available.
                                                         </div>
                                                     ) : (
                                                         <div
@@ -6895,6 +7162,50 @@
                                                                 gap: 12,
                                                             }}
                                                         >
+                                                            <div style={{
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "space-between",
+                                                                background: "var(--surface-2)",
+                                                                borderRadius: 6,
+                                                                padding: "10px 14px",
+                                                                border: "1px solid var(--border)",
+                                                                marginBottom: 4,
+                                                            }}>
+                                                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Status Rencana Koordinasi:</span>
+                                                                    <span style={{
+                                                                        fontSize: 9, fontFamily: "var(--mono)", padding: "2px 6px", borderRadius: 3,
+                                                                        background: laporan.plan.status === "APPROVED" ? "rgba(63,185,80,0.1)" : laporan.plan.status === "REJECTED" ? "rgba(248,81,73,0.1)" : "rgba(88,166,255,0.1)",
+                                                                        color: laporan.plan.status === "APPROVED" ? "var(--green)" : laporan.plan.status === "REJECTED" ? "var(--red)" : "var(--blue)",
+                                                                        border: `1px solid ${laporan.plan.status === "APPROVED" ? "rgba(63,185,80,0.2)" : laporan.plan.status === "REJECTED" ? "rgba(248,81,73,0.2)" : "rgba(88,166,255,0.2)"}`
+                                                                    }}>
+                                                                        {laporan.plan.status || "DRAFT"}
+                                                                    </span>
+                                                                </div>
+                                                                {laporan.plan.status === "DRAFT" && (
+                                                                    <div style={{ display: "flex", gap: 6 }}>
+                                                                        <button
+                                                                            onClick={() => approvePlan(laporan.plan.id)}
+                                                                            style={{
+                                                                                padding: "4px 10px", fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: "pointer",
+                                                                                background: "rgba(63,185,80,0.1)", color: "var(--green)", border: "1px solid rgba(63,185,80,0.25)", transition: "all 0.15s"
+                                                                            }}
+                                                                        >
+                                                                            Approve
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => rejectPlan(laporan.plan.id)}
+                                                                            style={{
+                                                                                padding: "4px 10px", fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: "pointer",
+                                                                                background: "rgba(248,81,73,0.1)", color: "var(--red)", border: "1px solid rgba(248,81,73,0.25)", transition: "all 0.15s"
+                                                                            }}
+                                                                        >
+                                                                            Reject
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                             {laporan.plan
                                                                 .resource_mapping && (
                                                                 <div>
@@ -7041,8 +7352,8 @@
                                                                             marginBottom: 6,
                                                                         }}
                                                                     >
-                                                                        Estimasi
-                                                                        Timeline
+                                                                         Estimated
+                                                                         Timeline
                                                                     </div>
                                                                     <div
                                                                         style={{
@@ -7073,7 +7384,7 @@
                                                 }}
                                             >
                                                 Failed to load report. Data
-                                                mungkin belum tersedia.
+                                                mungkin not yet available.
                                             </div>
                                         )}
                                     </div>
@@ -7767,6 +8078,11 @@
                 const [latestEq, setLatestEq] = useState(null);
                 const [stats, setStats] = useState(null);
                 const [pendingDrafts, setPendingDrafts] = useState([]);
+                const [selectedEq, setSelectedEq] = useState(null);
+                const [laporan, setLaporan] = useState(null);
+                const selectedEqRef = React.useRef(null);
+                selectedEqRef.current = selectedEq;
+
                 const [logs, setLogs] = useState([]);
                 const [agentFeed, setAgentFeed] = useState([
                     {
@@ -7839,6 +8155,19 @@
                                 setAgentFeed(formattedFeed);
                             }
                         }
+
+                        // Live re-fetch selected earthquake laporan to sync with approvals
+                        if (selectedEqRef.current) {
+                            try {
+                                const lRes = await fetch(`/api/laporan/${selectedEqRef.current.id}`);
+                                if (lRes.ok) {
+                                    const lJson = await lRes.json();
+                                    setLaporan(lJson.data);
+                                }
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        }
                         try {
                             const approvalRes = await fetch(
                                 "/api/approval/stats",
@@ -7903,6 +8232,25 @@
                         console.log("[WebSocket] Pipeline completed:", data);
                         showToast(`✓ Earthquake analysis M${Number(data.magnitude).toFixed(1)} completed`);
                         fetchData();
+                    });
+
+                    socket.on("agent_activity", (data) => {
+                        console.log("[WebSocket] Aktivitas agen:", data);
+                        const date = new Date(data.ts);
+                        const timeString = isNaN(date.getTime())
+                            ? (data.ts ? data.ts.substring(11, 19) : "—")
+                            : date.toLocaleTimeString("id-ID", { hour12: false });
+                        
+                        const formattedItem = { ...data, ts: timeString };
+                        
+                        setAgentFeed((prev) => {
+                            const cleanPrev = (prev || []).filter(item => item.d !== "Menyiapkan data aktivitas agen...");
+                            if (cleanPrev.some(item => item.ts === formattedItem.ts && item.ag === formattedItem.ag && item.d === formattedItem.d)) {
+                                return cleanPrev;
+                            }
+                            const updated = [formattedItem, ...cleanPrev];
+                            return updated.slice(0, 50);
+                        });
                     });
 
                     return () => {
@@ -8242,9 +8590,37 @@
                                     onAct={act}
                                     onEdit={openEdit}
                                     fetchData={fetchData}
+                                    onSelectEq={async (group) => {
+                                        const eqObj = {
+                                            id: group.id,
+                                            magnitude: group.magnitude,
+                                            location_desc: group.location,
+                                            timestamp: group.latest
+                                        };
+                                        setSelectedEq(eqObj);
+                                        setLaporan(null);
+                                        setNav("Reports");
+                                        try {
+                                            const res = await fetch(`/api/laporan/${group.id}`);
+                                            if (res.ok) {
+                                                const j = await res.json();
+                                                setLaporan(j.data);
+                                            }
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                    }}
                                 />
                             )}
-                            {nav === "Reports" && <PageLaporan />}
+                            {nav === "Reports" && (
+                                <PageLaporan
+                                    selectedEq={selectedEq}
+                                    setSelectedEq={setSelectedEq}
+                                    laporan={laporan}
+                                    setLaporan={setLaporan}
+                                    fetchData={fetchData}
+                                />
+                            )}
                             {nav === "Analytics" && <PageAnalitik />}
                             {nav === "Logs" && <PageLog />}
                             {false && (

@@ -69,6 +69,34 @@ class Orchestrator:
             "total_coord_plans":      0,
         }
 
+        # Live activity logs
+        self.activity_logs = [
+            {
+                "ts": datetime.now().isoformat(),
+                "ag": "Orchestrator",
+                "st": "ok",
+                "d": "Orchestrator diinisialisasi dan siap menerima sinyal monitoring."
+            }
+        ]
+
+    def log_activity(self, agent: str, status: str, description: str):
+        log_entry = {
+            "ts": datetime.now().isoformat(),
+            "ag": agent,
+            "st": status,  # "proc" | "ok" | "wait"
+            "d": description
+        }
+        self.activity_logs.insert(0, log_entry)
+        if len(self.activity_logs) > 50:
+            self.activity_logs.pop()
+
+        if self.on_event:
+            try:
+                self.on_event("agent_activity", log_entry)
+            except Exception as e:
+                logger.error(f"Gagal emit agent_activity: {e}")
+
+
     # ─────────────────────────────────────────────────────────
     #  Single Pipeline Run
     # ─────────────────────────────────────────────────────────
@@ -90,6 +118,7 @@ class Orchestrator:
         }
 
         logger.info(f"━━━ Pipeline: Gempa ID={eq_id} M{eq_mag} ━━━")
+        self.log_activity("Orchestrator", "proc", f"Memulai koordinasi pipeline untuk Gempa ID {eq_id} (M{eq_mag})")
 
         # Step 1: Update status → PROCESSING
         self.db.update_pipeline_status(eq_id, "PROCESSING")
@@ -97,12 +126,15 @@ class Orchestrator:
         try:
             # Step 2: Intelligence Agent
             logger.info(f"[Step 2/5] Intelligence Agent untuk gempa {eq_id}…")
+            self.log_activity("Intelligence Agent", "proc", f"Mencari berita lokal dan mendeteksi hoaks untuk Gempa ID {eq_id}...")
             intel_reports = self.intelligence_agent.run(earthquake)
             result["intel"] = len(intel_reports)
             self._stats["total_intel_reports"] += len(intel_reports)
+            self.log_activity("Intelligence Agent", "ok", f"Selesai. Menemukan {len(intel_reports)} laporan berita.")
 
             # Step 3: Analysis Agent
             logger.info(f"[Step 3/5] Analysis Agent untuk gempa {eq_id}…")
+            self.log_activity("Analysis Agent", "proc", f"Membuat Situation Report dengan LLM untuk Gempa ID {eq_id}...")
             sitrep = self.analysis_agent.run(eq_id)
             result["sitrep"] = sitrep
 
@@ -112,12 +144,15 @@ class Orchestrator:
                     self._stats["total_sitreps_llm"] += 1
                 else:
                     self._stats["total_sitreps_fallback"] += 1
+                self.log_activity("Analysis Agent", "ok", f"Situation Report selesai dibuat. Risk level: {sitrep.get('risk_level', 'MEDIUM')}")
 
                 # Step 4: Communication Agent (hanya jika sitrep berhasil)
                 logger.info(f"[Step 4/5] Communication Agent untuk gempa {eq_id}…")
+                self.log_activity("Communication Agent", "proc", f"Menyusun draf peringatan multibahasa untuk Gempa ID {eq_id}...")
                 comm_drafts = self.communication_agent.run(eq_id)
                 result["comm_drafts"] = len(comm_drafts)
                 self._stats["total_comm_drafts"] += len(comm_drafts)
+                self.log_activity("Communication Agent", "ok", f"Selesai menyusun {len(comm_drafts)} draf peringatan.")
 
                 if self.on_event and len(comm_drafts) > 0:
                     try:
@@ -130,13 +165,53 @@ class Orchestrator:
 
                 # Step 5: Coordination Agent
                 logger.info(f"[Step 5/5] Coordination Agent untuk gempa {eq_id}…")
+                self.log_activity("Coordination Agent", "proc", f"Menyusun rencana koordinasi dan logistik untuk Gempa ID {eq_id}...")
                 coord_plan = self.coordination_agent.run(eq_id)
                 result["coord_plan"] = coord_plan
                 if coord_plan:
                     self._stats["total_coord_plans"] += 1
+                self.log_activity("Coordination Agent", "ok", "Rencana koordinasi dan alokasi logistik selesai dibuat.")
+
+                # ── Auto-Approve untuk LOW / MEDIUM risk ─────────────────────────────────────
+                # Hanya gempa dengan risk level HIGH / CRITICAL yang wajib melalui verifikasi manual (Human-in-the-Loop)
+                risk_level = sitrep.get("risk_level", "MEDIUM")
+                if risk_level in {"LOW", "MEDIUM"}:
+                    logger.info(f"[Auto-Approve] Risk={risk_level} → auto-approving drafts & plan untuk gempa {eq_id}…")
+                    officer = "AutoApprove-System"
+                    drafts_in_db = self.db.get_communication_drafts(eq_id)
+                    for d in drafts_in_db:
+                        self.db.approve_communication_draft(d["id"], officer)
+                        self.db.insert_audit_log({
+                            "action_type":  "APPROVE",
+                            "item_table":   "communication_drafts",
+                            "item_id":      d["id"],
+                            "decision":     "APPROVED",
+                            "officer_name": officer,
+                            "notes":        f"Auto-approved: risk level {risk_level}",
+                        })
+                    if coord_plan and coord_plan.get("id"):
+                        self.db.approve_coordination_plan(coord_plan["id"], officer)
+                        self.db.insert_audit_log({
+                            "action_type":  "APPROVE",
+                            "item_table":   "coordination_plans",
+                            "item_id":      coord_plan["id"],
+                            "decision":     "APPROVED",
+                            "officer_name": officer,
+                            "notes":        f"Auto-approved: risk level {risk_level}",
+                        })
+                    logger.info(f"[Auto-Approve] Selesai — {len(drafts_in_db)} draft + plan di-approve otomatis.")
+                    self.log_activity("Orchestrator", "ok", f"Auto-Approve selesai: Risk {risk_level} disetujui otomatis.")
+                else:
+                    reason = f"Risk {risk_level} dideteksi"
+                    logger.info(f"[Manual-Approval] {reason} → draft & plan menunggu persetujuan operator.")
+                    self.log_activity("Orchestrator", "wait", f"{reason}. Menunggu persetujuan manual.")
+            else:
+                self.log_activity("Analysis Agent", "wait", "Gagal membuat Situation Report.")
 
             # Done
             self.db.update_pipeline_status(eq_id, "DONE")
+            self.log_activity("Orchestrator", "ok", f"Pipeline selesai untuk Gempa ID {eq_id}.")
+
             if self.on_event:
                 try:
                     self.on_event("pipeline_done", {
@@ -160,6 +235,7 @@ class Orchestrator:
             logger.error(f"✘ Pipeline gagal untuk gempa {eq_id}: {exc}")
             self.db.update_pipeline_status(eq_id, "FAILED")
             result["error"] = str(exc)
+            self.log_activity("Orchestrator", "wait", f"Gagal memproses pipeline Gempa ID {eq_id}: {exc}")
 
         return result
 
@@ -196,21 +272,30 @@ class Orchestrator:
             logger.info(f"\n{'='*55}")
             logger.info(f"  SIKLUS #{self.cycle_count} — {self.last_cycle_time.strftime('%H:%M:%S')}")
             logger.info(f"{'='*55}")
+            self.log_activity("Orchestrator", "proc", f"Memulai Siklus #{self.cycle_count} pemantauan...")
 
             try:
                 # Step 1: Monitoring Agent
                 logger.info("[Step 1/3] Monitoring Agent — polling BMKG…")
-                self.monitoring_agent.poll_once()
+                self.log_activity("Monitoring Agent", "proc", "Menghubungi API BMKG untuk mendeteksi aktivitas gempa bumi terbaru...")
+                summary = self.monitoring_agent.poll_once()
+                new_eqs = summary.get("new", 0)
+                if new_eqs > 0:
+                    self.log_activity("Monitoring Agent", "ok", f"Terdeteksi {new_eqs} gempa baru dari BMKG!")
+                else:
+                    self.log_activity("Monitoring Agent", "ok", "Polling selesai. Tidak ada aktivitas seismik baru terdeteksi.")
 
                 # Step 2 & 3: Process pending events (Intelligence + Analysis)
                 logger.info("[Step 2-3/3] Processing pending M≥5 events…")
                 self.process_pending_events()
 
                 self.last_error = None
+                self.log_activity("Orchestrator", "ok", f"Siklus #{self.cycle_count} selesai. Sistem standby.")
 
             except Exception as exc:
                 self.last_error = str(exc)
                 logger.error(f"Error di siklus #{self.cycle_count}: {exc}")
+                self.log_activity("Orchestrator", "wait", f"Error pada siklus #{self.cycle_count}: {exc}")
 
             if self.is_running:
                 logger.info(f"Siklus berikutnya dalam {POLL_INTERVAL_SECONDS} detik…")
